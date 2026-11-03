@@ -1,6 +1,7 @@
-import { Check, Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Check, Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn,OneToOne } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
 import { Session } from '../../auth/entities/session.entity';
+import { Athlete } from '../../athletes/entities/athlete.entity';
 
 @Entity('users')
 @Check('users_icesi_email', `email = lower(email) AND email LIKE '%@icesi.edu.co'`)
@@ -18,4 +19,7 @@ export class User {
   roles!: Role[];
 
   @OneToMany(() => Session, session => session.user) sessions!: Session[];
+
+  @OneToOne(() => Athlete, { nullable: true })
+  athlete!: Athlete | null;
 }
