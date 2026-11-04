@@ -11,6 +11,14 @@ export const TYPE_LABELS: Record<CompetitionType, string> = {
 
 export type Team = { id: string; name: string; sport: string };
 
+export type CompetitionStatus = "programada" | "aplazada" | "cancelada";
+
+// Solo se etiquetan los estados distintos del normal (HU7 CA3: "Cancelada").
+export const STATUS_LABELS: Partial<Record<CompetitionStatus, string>> = {
+  aplazada: "Aplazada",
+  cancelada: "Cancelada",
+};
+
 export type Competition = {
   id: string;
   name: string;
@@ -21,6 +29,10 @@ export type Competition = {
   endTime: string;
   location: string;
   type: CompetitionType;
+  status: CompetitionStatus;
+  cancellation: { reason: string; cancelledAt: string } | null;
+  // HU7 CA4: el backend indica si quien consulta es el entrenador del equipo y aún se puede cancelar.
+  canCancel: boolean;
 };
 
 export type CompetitionForm = {
@@ -63,6 +75,11 @@ export const createCompetition = (form: CompetitionForm) =>
 
 export const updateCompetition = (id: string, changes: ScheduleChanges) =>
   apiFetch<Competition>(`/competitions/${id}`, { method: "PATCH", body: JSON.stringify(changes) });
+
+export const CANCELLATION_REASON_REQUIRED = "El motivo de la cancelación es obligatorio.";
+
+export const cancelCompetition = (id: string, reason: string) =>
+  apiFetch<Competition>(`/competitions/${id}/cancel`, { method: "POST", body: JSON.stringify({ reason }) });
 
 const dateFormatter = new Intl.DateTimeFormat("es-CO", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 

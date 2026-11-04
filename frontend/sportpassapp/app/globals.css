@@ -1888,24 +1888,61 @@ button {
   text-decoration: underline;
   text-underline-offset: 5px;
 }
-.tournaments-content {
+.tournaments-content,
+.competitions-content {
   width: min(100%, 1600px);
   margin: 0 auto;
   padding: 35px clamp(24px, 6vw, 96px) 72px;
 }
-.tournaments-content > .back-link {
+.tournaments-content > .back-link,
+.competitions-content .back-link {
   margin-bottom: 34px;
   font-size: 16px;
 }
-.tournaments-page .admin-page-heading {
+.tournaments-page .admin-page-heading,
+.competitions-page .admin-page-heading {
   flex-wrap: wrap;
 }
-.tournaments-page .admin-page-heading p:last-child {
+.tournaments-page .admin-page-heading p:last-child,
+.competitions-page .admin-page-heading p:last-child {
   font-size: 17px;
 }
 .tournaments-page .admin-error,
-.tournaments-page .admin-loading {
+.tournaments-page .admin-loading,
+.competitions-page .admin-notice,
+.competitions-page .admin-error,
+.competitions-page .admin-loading {
   font-size: 16px;
+}
+.competitions-page .admin-panel-heading h2 {
+  font-size: 21px;
+}
+/* Competencias (HU4/HU6) con el diseño de HU1. */
+.competitions-page .input {
+  /* `input { font: inherit }` (sin capa) le ganaría a .input y heredaría la negrita de la etiqueta. */
+  font-weight: 400;
+}
+.competition-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--icesi);
+  background: #fff;
+}
+.competition-card.is-aplazada {
+  border-left-color: var(--orange);
+}
+.competition-card.is-cancelada {
+  border-left-color: #d79b9b;
+  background: #fcfcfd;
+}
+.competition-card.is-cancelada .competition-name {
+  text-decoration: line-through;
+  text-decoration-color: #b9b9c6;
 }
 .match-list {
   display: grid;
@@ -2064,16 +2101,24 @@ button {
 }
 
 @layer components {
+  /* Campos y botones de competencias con la paleta de HU1. */
   .input {
-    @apply block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-blue-900;
+    @apply block w-full rounded-[10px] border border-(--line) bg-white px-3 py-2.5 text-base font-normal text-(--ink) outline-none focus:border-(--icesi) focus:ring-2 focus:ring-(--lavender) disabled:opacity-60;
   }
   .input-invalid {
-    @apply border-red-500 ring-2 ring-red-200 dark:ring-red-900;
+    @apply border-[#c94a4a] ring-2 ring-[#fbe0e0];
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60;
+    @apply inline-flex min-h-[52px] items-center justify-center rounded-[10px] bg-(--icesi) px-5 text-sm font-bold text-white transition-colors hover:bg-(--icesi-dark) disabled:opacity-60;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800;
+    @apply inline-flex items-center justify-center rounded-[10px] border border-(--line) px-4 py-2 text-sm font-bold text-(--icesi) transition-colors hover:bg-(--lavender);
+  }
+  /* HU7: acciones destructivas (cancelar competencia). */
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-[10px] bg-[#b33a3a] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#962e2e] disabled:opacity-60;
+  }
+  .btn-danger-outline {
+    @apply inline-flex items-center justify-center rounded-[10px] border border-[#f0cccc] px-4 py-2 text-sm font-bold text-[#9a2929] transition-colors hover:bg-[#fff2f2];
   }
 }

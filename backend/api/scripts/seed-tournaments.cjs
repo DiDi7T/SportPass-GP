@@ -15,7 +15,7 @@ const VOLLEYBALL = 'Selección Voleibol Femenino';
 const MATCHES = [
   { name: '[Demo] Copa Universitaria · Programado', team: FOOTBALL, days: 7, startTime: '15:00', endTime: '17:00', location: 'Coliseo Universidad Icesi', type: 'local', status: 'programada', opponent: 'Universidad Javeriana', venueAddress: 'Calle 18 #122-135, Cali' },
   { name: '[Demo] Liga Regional · Aplazado', team: VOLLEYBALL, days: 14, startTime: '10:00', endTime: '12:00', location: 'Coliseo El Pueblo', type: 'regional', status: 'aplazada', opponent: 'Universidad del Valle', venueAddress: null },
-  { name: '[Demo] Torneo Nacional · Cancelado', team: FOOTBALL, days: 10, startTime: '18:00', endTime: '20:00', location: 'Estadio Pascual Guerrero', type: 'nacional', status: 'cancelada', opponent: 'Universidad de los Andes', venueAddress: 'Calle 5 #34-00, Cali' },
+  { name: '[Demo] Torneo Nacional · Cancelado', team: FOOTBALL, days: 10, startTime: '18:00', endTime: '20:00', location: 'Estadio Pascual Guerrero', type: 'nacional', status: 'cancelada', opponent: 'Universidad de los Andes', venueAddress: 'Calle 5 #34-00, Cali', cancellationReason: 'El organizador suspendió el torneo.' },
   { name: '[Demo] Copa Interuniversitaria · Finalizado', team: VOLLEYBALL, days: -7, startTime: '14:00', endTime: '16:00', location: 'Coliseo 2 Universidad Icesi', type: 'local', status: 'programada', opponent: 'Universidad Autónoma de Occidente', venueAddress: 'Calle 18 #122-135, Cali' },
 ];
 
@@ -36,10 +36,10 @@ async function main() {
   });
   await client.connect();
   try {
-    const { rows: [column] } = await client.query(
-      `SELECT 1 FROM information_schema.columns WHERE table_name = 'competitions' AND column_name = 'status'`,
+    const { rows: columns } = await client.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'competitions' AND column_name IN ('status', 'cancellation_reason')`,
     );
-    if (!column) throw new Error('Falta la columna competitions.status. Inicia el backend desde la rama de SCRUM-17 (yarn start:dev) y vuelve a ejecutar el seed.');
+    if (columns.length < 2) throw new Error('Faltan columnas en competitions (status o cancellation_reason). Inicia el backend desde la rama actual (yarn start:dev) y vuelve a ejecutar el seed.');
 
     const { rows: [coach] } = await client.query('SELECT id FROM users WHERE email = $1', [DEMO_COACH]);
     if (!coach) throw new Error(`No existe el usuario ${DEMO_COACH}.`);
@@ -50,17 +50,24 @@ async function main() {
     await client.query('BEGIN');
     for (const match of MATCHES) {
       const date = bogotaDate(match.days);
-      const values = [match.name, teamId[match.team], date, date, match.startTime, match.endTime, match.location, match.type, match.status, match.opponent, match.venueAddress, coach.id];
+      // La cancelada queda como si la hubiera cancelado el entrenador demo (HU7): motivo, quién y cuándo.
+      const cancelled = match.status === 'cancelada';
+      const values = [
+        match.name, teamId[match.team], date, date, match.startTime, match.endTime, match.location, match.type, match.status, match.opponent, match.venueAddress, coach.id,
+        cancelled ? match.cancellationReason : null, cancelled ? coach.id : null, cancelled ? new Date() : null,
+      ];
       const { rowCount } = await client.query(
         `UPDATE competitions SET team_id = $2, start_date = $3, end_date = $4, start_time = $5, end_time = $6, location = $7,
-           type = $8, status = $9, opponent = $10, venue_address = $11, created_by = $12, updated_at = now()
+           type = $8, status = $9, opponent = $10, venue_address = $11, created_by = $12,
+           cancellation_reason = $13, cancelled_by = $14, cancelled_at = $15, updated_at = now()
          WHERE name = $1`,
         values,
       );
       if (!rowCount) {
         await client.query(
-          `INSERT INTO competitions (name, team_id, start_date, end_date, start_time, end_time, location, type, status, opponent, venue_address, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          `INSERT INTO competitions (name, team_id, start_date, end_date, start_time, end_time, location, type, status, opponent, venue_address, created_by,
+             cancellation_reason, cancelled_by, cancelled_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
           values,
         );
       }

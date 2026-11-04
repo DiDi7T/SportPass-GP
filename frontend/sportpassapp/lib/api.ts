@@ -1,3 +1,5 @@
+import { getSession, SESSION_KEY } from "./auth";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 const TOKEN_KEY = "sportpass_access_token";
@@ -8,9 +10,10 @@ export class ApiError extends Error {
   }
 }
 
+// El login de HU1 (/login) guarda la sesión en localStorage; su token tiene prioridad.
 export function getToken() {
   try {
-    return sessionStorage.getItem(TOKEN_KEY);
+    return getSession()?.accessToken ?? sessionStorage.getItem(TOKEN_KEY);
   } catch {
     return null;
   }
@@ -18,6 +21,9 @@ export function getToken() {
 
 export function setToken(token: string | null) {
   try {
+    // Al renovar el token se actualiza también la sesión de /login para que no quede vencida.
+    const session = getSession();
+    if (session && token) localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, accessToken: token }));
     if (token) sessionStorage.setItem(TOKEN_KEY, token);
     else sessionStorage.removeItem(TOKEN_KEY);
   } catch {

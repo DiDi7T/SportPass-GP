@@ -78,7 +78,7 @@ export default function NewCompetitionPage() {
   const fieldClass = (field: keyof CompetitionForm) => `input mt-1 ${missing.has(field) ? "input-invalid" : ""}`;
   const label = (field: keyof CompetitionForm) => (
     <span>
-      {FIELD_LABELS[field]} <span className="text-red-600" aria-hidden>*</span>
+      {FIELD_LABELS[field]} <span className="text-[#9a2929]" aria-hidden>*</span>
     </span>
   );
 
@@ -86,22 +86,28 @@ export default function NewCompetitionPage() {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">No tienes equipos a cargo. Pide a un administrador que te asigne como entrenador de un equipo.</p>
+        <p className="admin-loading">No tienes equipos a cargo. Pide a un administrador que te asigne como entrenador de un equipo.</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-5">
+    <form onSubmit={submit} noValidate className="max-w-2xl space-y-5 text-base">
       <BackLink />
-      <h1 className="text-2xl font-semibold">Registrar competencia</h1>
+      <div className="admin-page-heading">
+        <div>
+          <p className="eyebrow">SPORTPASS · COMPETENCIAS</p>
+          <h1>Registrar competencia</h1>
+          <p>Los campos marcados con * son obligatorios.</p>
+        </div>
+      </div>
 
-      <label className="block text-sm font-medium">
+      <label className="block font-bold">
         {label("name")}
         <input className={fieldClass("name")} value={form.name} onChange={set("name")} maxLength={160} placeholder="Ej. Juegos Universitarios ASCUN" />
       </label>
 
-      <label className="block text-sm font-medium">
+      <label className="block font-bold">
         {label("teamId")}
         <select className={fieldClass("teamId")} value={form.teamId} onChange={set("teamId")} disabled={!teams}>
           <option value="">{teams ? "Selecciona un equipo" : "Cargando equipos…"}</option>
@@ -112,36 +118,36 @@ export default function NewCompetitionPage() {
       </label>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm font-medium">
+        <label className="block font-bold">
           {label("startDate")}
           <input type="date" className={fieldClass("startDate")} value={form.startDate} onChange={set("startDate")} />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="block font-bold">
           {label("startTime")}
           <input type="time" className={fieldClass("startTime")} value={form.startTime} onChange={set("startTime")} />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="block font-bold">
           {label("endDate")}
           <input type="date" className={fieldClass("endDate")} value={form.endDate} min={form.startDate || undefined} onChange={set("endDate")} />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="block font-bold">
           {label("endTime")}
           <input type="time" className={fieldClass("endTime")} value={form.endTime} onChange={set("endTime")} />
         </label>
       </div>
 
-      <label className="block text-sm font-medium">
+      <label className="block font-bold">
         {label("location")}
         <input className={fieldClass("location")} value={form.location} onChange={set("location")} maxLength={200} placeholder="Ej. Coliseo Universidad Icesi" />
       </label>
 
-      <fieldset className="text-sm font-medium">
+      <fieldset className="font-bold">
         <legend>{label("type")}</legend>
         <div className={`mt-2 flex gap-2 rounded-lg ${missing.has("type") ? "ring-2 ring-red-500" : ""}`}>
           {COMPETITION_TYPES.map((type) => (
             <label key={type} className="flex-1">
               <input type="radio" name="type" value={type} checked={form.type === type} onChange={set("type")} className="peer sr-only" />
-              <span className="block cursor-pointer rounded-lg border border-zinc-300 px-3 py-2 text-center peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400 dark:border-zinc-700">
+              <span className="block cursor-pointer rounded-[10px] border border-(--line) px-3 py-2.5 text-center font-normal peer-checked:border-(--icesi) peer-checked:bg-(--icesi) peer-checked:font-bold peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-(--icesi)">
                 {TYPE_LABELS[type]}
               </span>
             </label>
@@ -149,7 +155,7 @@ export default function NewCompetitionPage() {
         </div>
       </fieldset>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>}
+      {error && <p role="alert" className="admin-error">{error}</p>}
 
       <button className="btn-primary w-full" disabled={submitting}>{submitting ? "Guardando…" : "Guardar"}</button>
     </form>
@@ -157,5 +163,5 @@ export default function NewCompetitionPage() {
 }
 
 function BackLink() {
-  return <Link href="/competencias" className="text-sm text-blue-700 hover:underline dark:text-blue-400">← Volver a competencias</Link>;
+  return <Link href="/competencias" className="back-link">← Volver a competencias</Link>;
 }

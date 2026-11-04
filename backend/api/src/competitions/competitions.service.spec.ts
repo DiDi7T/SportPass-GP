@@ -18,7 +18,7 @@ describe('CompetitionsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new CompetitionsService(competitions, teams);
+    service = new CompetitionsService(competitions, teams, {} as any);
     teams.findOne.mockResolvedValue(team);
     competitions.findOne.mockResolvedValue(stored);
     competitions.save.mockImplementation(async (data: any) => ({ ...data, id: 'comp-1' }));

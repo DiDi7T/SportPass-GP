@@ -8,7 +8,7 @@ import { ApiError } from "@/lib/api";
 import { TYPE_LABELS } from "@/lib/competitions";
 import { fetchMatch, formatMatchRange, type Match } from "@/lib/tournaments";
 import { MatchStatusPill } from "../status-pill";
-import { useRoleSession } from "../use-role-session";
+import { useRoleSession } from "@/lib/use-role-session";
 
 // Con cacheComponents el id solo se conoce al pedir la página, así que useParams necesita Suspense.
 export default function MatchPage() {

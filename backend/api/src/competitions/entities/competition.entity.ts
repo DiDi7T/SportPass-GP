@@ -26,6 +26,10 @@ export class Competition {
   @Column({ type: 'varchar', length: 20, default: 'programada' }) status!: CompetitionStatus;
   @Column({ type: 'varchar', length: 160, nullable: true }) opponent!: string | null;
   @Column({ name: 'venue_address', type: 'varchar', length: 255, nullable: true }) venueAddress!: string | null;
+  // HU7: cancelar no borra la competencia; se conserva el motivo, quién la canceló y cuándo.
+  @Column({ name: 'cancellation_reason', type: 'varchar', length: 500, nullable: true }) cancellationReason!: string | null;
+  @Column({ name: 'cancelled_by', type: 'uuid', nullable: true }) cancelledById!: string | null;
+  @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true }) cancelledAt!: Date | null;
   @Column({ name: 'created_by', type: 'uuid' }) createdById!: string;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' }) updatedAt!: Date;
@@ -35,4 +39,7 @@ export class Competition {
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'created_by' }) createdBy!: User;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'cancelled_by' }) cancelledBy!: User | null;
 }

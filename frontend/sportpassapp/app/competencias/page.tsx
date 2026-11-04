@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { fetchCompetitions, fetchMyTeams, formatRange, TYPE_LABELS, type Competition, type Team } from "@/lib/competitions";
+import { dashboardPath } from "@/lib/auth";
+import { fetchCompetitions, fetchMyTeams, formatRange, STATUS_LABELS, TYPE_LABELS, type Competition, type Team } from "@/lib/competitions";
 import { useSession } from "./session";
+import { CancelCompetitionDialog } from "./cancel-dialog";
 import { EditCompetitionDialog } from "./edit-dialog";
 
 export default function CompetitionsPage() {
   return (
-    <Suspense fallback={<p className="text-center text-sm text-zinc-500">Cargando…</p>}>
+    <Suspense fallback={<p className="admin-loading">Cargando…</p>}>
       <Competitions />
     </Suspense>
   );
 }
 
 function Competitions() {
-  const { user, signOut } = useSession();
+  const { user } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -27,6 +29,7 @@ function Competitions() {
   const [competitions, setCompetitions] = useState<Competition[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Competition | null>(null);
+  const [cancelling, setCancelling] = useState<Competition | null>(null);
   const [notice, setNotice] = useState<{ title: string; competition: Competition } | null>(null);
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
 
@@ -61,32 +64,38 @@ function Competitions() {
     setEditing(null);
   }
 
+  function onCancelled(cancelled: Competition) {
+    setCompetitions((list) => list?.map((competition) => (competition.id === cancelled.id ? cancelled : competition)) ?? null);
+    setNotice({ title: "Competencia cancelada correctamente.", competition: cancelled });
+    setCancelling(null);
+  }
+
   const selectedTeam = teams.find((team) => team.id === teamId);
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <Link className="back-link" href={dashboardPath(user.roles[0])}>← Volver a mi inicio</Link>
+
+      <div className="admin-page-heading">
         <div>
-          <h1 className="text-2xl font-semibold">Competencias</h1>
-          <p className="text-sm text-zinc-500">{user.fullName}</p>
+          <p className="eyebrow">SPORTPASS · COMPETENCIAS</p>
+          <h1>Competencias</h1>
+          <p>Registra y actualiza las competencias de tus equipos.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={signOut} className="text-sm text-zinc-500 hover:underline">Salir</button>
-          <Link href="/competencias/nueva" className="btn-primary">+ Registrar competencia</Link>
-        </div>
-      </header>
+        <Link href="/competencias/nueva" className="primary-button">Registrar competencia <span>+</span></Link>
+      </div>
 
       {notice && (
-        <div role="status" className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-          <p className="font-medium">{notice.title}</p>
+        <div role="status" className="admin-notice">
+          <p className="font-bold">{notice.title}</p>
           <p className="mt-1">
             {notice.competition.name} · {formatRange(notice.competition)} · {notice.competition.location}
           </p>
         </div>
       )}
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>}
+      {error && <p role="alert" className="admin-error">{error}</p>}
 
-      <label className="block text-sm font-medium">
+      <label className="block max-w-md text-base font-bold">
         Equipo
         <select className="input mt-1" value={teamId} onChange={(event) => selectTeam(event.target.value)}>
           <option value="">Todos mis equipos</option>
@@ -96,34 +105,57 @@ function Competitions() {
         </select>
       </label>
 
-      <section aria-label="Calendario" className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="mb-3 text-sm font-medium text-zinc-500">Calendario {selectedTeam ? `· ${selectedTeam.name}` : ""}</h2>
+      <section aria-label="Calendario" className="admin-panel">
+        <div className="admin-panel-heading">
+          <h2>Calendario {selectedTeam ? `· ${selectedTeam.name}` : ""}</h2>
+        </div>
         <MonthCalendar month={month} onMonthChange={setMonth} competitions={competitions ?? []} />
       </section>
 
       <section aria-label="Listado de competencias" className="space-y-3">
-        <h2 className="text-lg font-semibold">Competencias registradas</h2>
-        {competitions === null && !error && <p className="text-sm text-zinc-500">Cargando…</p>}
-        {competitions?.length === 0 && <p className="text-sm text-zinc-500">Aún no hay competencias registradas.</p>}
+        <h2 className="text-2xl font-bold tracking-tight">Competencias registradas</h2>
+        {competitions === null && !error && <p className="admin-loading">Cargando…</p>}
+        {competitions?.length === 0 && <p className="admin-loading">Aún no hay competencias registradas.</p>}
         <ul className="space-y-3">
-          {competitions?.map((competition) => (
-            <li key={competition.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-              <div className="min-w-0 space-y-1">
-                <p className="font-medium">{competition.name}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{formatRange(competition)}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{competition.location}</p>
-                <p className="flex flex-wrap gap-2 pt-1 text-xs">
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 dark:bg-zinc-800">{competition.team.name}</span>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-800 dark:bg-blue-950 dark:text-blue-300">{TYPE_LABELS[competition.type]}</span>
-                </p>
-              </div>
-              <button onClick={() => setEditing(competition)} className="btn-secondary">Editar</button>
-            </li>
-          ))}
+          {competitions?.map((competition) => {
+            const cancelled = competition.status === "cancelada";
+            return (
+              <li key={competition.id} className={`competition-card is-${competition.status}`}>
+                <div className="min-w-0 space-y-1">
+                  <p className="flex flex-wrap items-center gap-2">
+                    <span className="competition-name text-lg font-bold">{competition.name}</span>
+                    {STATUS_LABELS[competition.status] && (
+                      <span className={`match-status match-status-${competition.status}`}>{STATUS_LABELS[competition.status]}</span>
+                    )}
+                  </p>
+                  <p className="text-(--muted)">{formatRange(competition)}</p>
+                  <p className="text-(--muted)">{competition.location}</p>
+                  {cancelled && competition.cancellation && (
+                    <p className="text-[#9a2929]">Motivo de la cancelación: {competition.cancellation.reason}</p>
+                  )}
+                  <p className="flex flex-wrap gap-2 pt-1 text-sm">
+                    <span className="bg-(--lavender) px-2 py-0.5 text-(--ink)">{competition.team.name}</span>
+                    <span className="bg-(--lavender) px-2 py-0.5 font-bold text-(--icesi)">{TYPE_LABELS[competition.type]}</span>
+                  </p>
+                </div>
+                {/* Una competencia cancelada no se edita ni se vuelve a cancelar (HU7). */}
+                {!cancelled && (
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setEditing(competition)} className="btn-secondary">Editar</button>
+                    {/* HU7 CA4: solo el entrenador del equipo ve la opción; el backend también lo valida. */}
+                    {competition.canCancel && (
+                      <button onClick={() => setCancelling(competition)} className="btn-danger-outline">Cancelar competencia</button>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
       {editing && <EditCompetitionDialog competition={editing} onClose={() => setEditing(null)} onUpdated={onUpdated} />}
+      {cancelling && <CancelCompetitionDialog competition={cancelling} onClose={() => setCancelling(null)} onCancelled={onCancelled} />}
     </div>
   );
 }
@@ -191,12 +223,12 @@ function MonthCalendar({ month, onMonthChange, competitions }: { month: Date; on
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <button onClick={() => shift(-1)} className="rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Mes anterior">‹</button>
-        <p className="font-medium">{monthLabel(month)}</p>
-        <button onClick={() => shift(1)} className="rounded px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Mes siguiente">›</button>
+        <button onClick={() => shift(-1)} className="rounded px-3 py-1 text-xl text-(--icesi) hover:bg-(--lavender)" aria-label="Mes anterior">‹</button>
+        <p className="text-lg font-bold">{monthLabel(month)}</p>
+        <button onClick={() => shift(1)} className="rounded px-3 py-1 text-xl text-(--icesi) hover:bg-(--lavender)" aria-label="Mes siguiente">›</button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {WEEKDAYS.map((day) => <div key={day} className="py-1 font-medium text-zinc-500">{day}</div>)}
+      <div className="grid grid-cols-7 gap-1 text-center text-sm">
+        {WEEKDAYS.map((day) => <div key={day} className="py-1 font-bold text-(--muted)">{day}</div>)}
         {Array.from({ length: leadingBlanks }, (_, index) => <div key={`blank-${index}`} />)}
         {Array.from({ length: daysInMonth }, (_, index) => {
           const key = toKey(new Date(month.getFullYear(), month.getMonth(), index + 1));
@@ -210,40 +242,46 @@ function MonthCalendar({ month, onMonthChange, competitions }: { month: Date; on
               onClick={() => setSelected(selected === key ? null : key)}
               aria-label={`${index + 1}: ${events.length ? events.map((event) => event.name).join(", ") : "sin competencias"}`}
               aria-pressed={selected === key}
-              className={`flex min-h-14 min-w-0 flex-col items-stretch gap-0.5 rounded-md p-1 ${events.length ? "bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900" : ""} ${key === today ? "ring-1 ring-zinc-400" : ""} ${selected === key ? "ring-2 ring-blue-500" : ""}`}
+              className={`flex min-h-14 min-w-0 flex-col items-stretch gap-0.5 rounded-md p-1 ${events.length ? "bg-(--lavender) hover:bg-[#e8e8ff]" : ""} ${key === today ? "ring-1 ring-(--muted)" : ""} ${selected === key ? "ring-2 ring-(--icesi)" : ""}`}
             >
               <span>{index + 1}</span>
               {events.slice(0, hidden > 0 ? MAX_CHIPS - 1 : MAX_CHIPS).map((event) => {
                 const continued = event.startDate !== key;
+                // HU7 CA3: la cancelada sigue en el calendario, tachada y en rojo.
+                const chip = event.status === "cancelada"
+                  ? "bg-[#fff2f2] text-[#9a2929] line-through"
+                  : continued ? "bg-[#dcdcff] text-(--icesi-dark)" : "bg-(--icesi) text-white";
                 return (
                   <span
                     key={event.id}
-                    title={`${event.name} · ${hoursOnDay(event, key)}`}
-                    className={`truncate rounded px-0.5 text-left text-[10px] leading-4 ${continued ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100" : "bg-blue-600 text-white"}`}
+                    title={`${event.name} · ${hoursOnDay(event, key)}${event.status === "cancelada" ? " · Cancelada" : ""}`}
+                    className={`truncate rounded px-0.5 text-left text-[10px] leading-4 ${chip}`}
                   >
                     {continued && "↳ "}{event.name}
                   </span>
                 );
               })}
-              {hidden > 0 && <span className="text-[10px] leading-4 text-blue-700 dark:text-blue-300">+{hidden + 1} más</span>}
+              {hidden > 0 && <span className="text-[10px] leading-4 text-(--icesi)">+{hidden + 1} más</span>}
             </button>
           );
         })}
       </div>
 
-      <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-blue-600 align-middle" />Inicia ese día</span>
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-blue-200 align-middle dark:bg-blue-800" />↳ Continúa de un día anterior</span>
+      <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-(--muted)">
+        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-(--icesi) align-middle" />Inicia ese día</span>
+        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[#dcdcff] align-middle" />↳ Continúa de un día anterior</span>
+        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-[#f0cccc] bg-[#fff2f2] align-middle" />Cancelada</span>
       </p>
 
       {selected && selectedEvents.length > 0 && (
-        <div className="mt-3 space-y-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
-          <p className="text-sm font-medium first-letter:uppercase">{dayFormatter.format(parseDate(selected))}</p>
+        <div className="mt-3 space-y-2 border-t border-(--line) pt-3">
+          <p className="font-bold first-letter:uppercase">{dayFormatter.format(parseDate(selected))}</p>
           <ul className="space-y-1.5">
             {selectedEvents.map((event) => (
-              <li key={event.id} className="text-sm">
-                <span className="font-medium">{event.name}</span>
-                <span className="text-zinc-500"> · {hoursOnDay(event, selected)} · {event.location} · {event.team.name}</span>
+              <li key={event.id}>
+                <span className={`font-bold ${event.status === "cancelada" ? "line-through" : ""}`}>{event.name}</span>
+                {event.status === "cancelada" && <span className="font-bold text-[#9a2929]"> · Cancelada</span>}
+                <span className="text-(--muted)"> · {hoursOnDay(event, selected)} · {event.location} · {event.team.name}</span>
               </li>
             ))}
           </ul>

@@ -6,8 +6,8 @@ import RoleNavbar from "@/components/role-navbar";
 import { dashboardPath } from "@/lib/auth";
 import { TYPE_LABELS } from "@/lib/competitions";
 import { dateBadge, fetchMatches, formatMatchRange, matchup, type Match } from "@/lib/tournaments";
+import { useRoleSession } from "@/lib/use-role-session";
 import { MatchStatusPill } from "./status-pill";
-import { useRoleSession } from "./use-role-session";
 
 export default function TournamentsPage() {
   const { session, logout, handleAuthError } = useRoleSession();

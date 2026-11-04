@@ -1,5 +1,4 @@
 import { apiFetch } from "./api";
-import { getSession } from "./auth";
 import { formatDate, type CompetitionType } from "./competitions";
 
 export const MATCH_STATUSES = ["programada", "aplazada", "cancelada", "finalizada"] as const;
@@ -25,15 +24,9 @@ export type Match = {
   status: MatchStatus;
 };
 
-// Usa el token de la sesión de /login (HU1). Si expiró, apiFetch lo renueva con la cookie de refresh.
-function withSession(): RequestInit {
-  const session = getSession();
-  return session ? { headers: { Authorization: `Bearer ${session.accessToken}` } } : {};
-}
+export const fetchMatches = () => apiFetch<Match[]>("/tournaments/matches");
 
-export const fetchMatches = () => apiFetch<Match[]>("/tournaments/matches", withSession());
-
-export const fetchMatch = (id: string) => apiFetch<Match>(`/tournaments/matches/${encodeURIComponent(id)}`, withSession());
+export const fetchMatch = (id: string) => apiFetch<Match>(`/tournaments/matches/${encodeURIComponent(id)}`);
 
 export function matchup(match: Match) {
   return `${match.teams.icesi} vs ${match.teams.opponent ?? "Rival por confirmar"}`;
