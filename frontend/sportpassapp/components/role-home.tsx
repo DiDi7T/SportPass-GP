@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import RoleNavbar from "@/components/role-navbar";
 import {
   apiUrl,
   dashboardPath,
@@ -26,8 +27,9 @@ const copy: Record<Role, { title: string; description: string; icon: string }> =
       icon: "⌁",
     },
     admin: {
-      title: "Administra SportPass",
-      description: "Pronto podrás gestionar usuarios, roles y permisos.",
+      title: "Gestiona el acceso a SportPass",
+      description:
+        "Consulta los usuarios y administra los roles y permisos de la plataforma.",
       icon: "✳",
     },
   };
@@ -66,21 +68,11 @@ export default function RoleHome({ role }: { role: Role }) {
   const firstName = session.user.fullName.split(" ")[0];
   return (
     <main className="role-page">
-      <header className="topbar role-topbar">
-        <a className="brand" href="/">
-          <img src="/images/ICESI_logo.svg" alt="Universidad Icesi" />
-        </a>
-        <nav className="role-nav">
-          <span>{roleNames[role]}</span>
-          <div className="user-menu">
-            <span className="avatar">{session.user.fullName.charAt(0)}</span>
-            <span>{session.user.fullName}</span>
-            <button className="text-button" onClick={logout}>
-              Cerrar sesión
-            </button>
-          </div>
-        </nav>
-      </header>
+      <RoleNavbar
+        role={role}
+        fullName={session.user.fullName}
+        onLogout={logout}
+      />
       <section className={`role-banner role-${role}`}>
         <div className="role-banner-shade" />
         <div className="role-banner-copy">
