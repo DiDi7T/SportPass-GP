@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState } from "react";
+import RoleNavbar from "@/components/role-navbar";
 import { ApiError } from "@/lib/api";
 import { TYPE_LABELS } from "@/lib/competitions";
 import { fetchMatch, formatMatchRange, type Match } from "@/lib/tournaments";
-import { StatusBadge } from "../status-badge";
+import { MatchStatusPill } from "../status-pill";
+import { useRoleSession } from "../use-role-session";
 
 // Con cacheComponents el id solo se conoce al pedir la página, así que useParams necesita Suspense.
 export default function MatchPage() {
   return (
-    <Suspense fallback={<p className="text-center text-sm text-zinc-500">Cargando…</p>}>
+    <Suspense fallback={<main className="dashboard-shell"><p className="dashboard-loading">Cargando el partido…</p></main>}>
       <MatchDetail />
     </Suspense>
   );
@@ -19,69 +21,103 @@ export default function MatchPage() {
 
 function MatchDetail() {
   const { id } = useParams<{ id: string }>();
+  const { session, logout, handleAuthError } = useRoleSession();
   const [match, setMatch] = useState<Match | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!session) return;
     // Un id mal formado (400) es, para quien navega, lo mismo que uno inexistente (404).
     fetchMatch(id)
       .then(setMatch)
-      .catch((err) => setError(err instanceof ApiError && err.status === 400 ? "Partido no encontrado." : err.message));
-  }, [id]);
+      .catch((err) => {
+        handleAuthError(err);
+        setError(err instanceof ApiError && err.status === 400 ? "Partido no encontrado." : err.message);
+      });
+    // handleAuthError solo redirige; no debe volver a disparar la consulta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, session]);
+
+  if (!session) {
+    return (
+      <main className="dashboard-shell">
+        <p className="dashboard-loading">Cargando el partido…</p>
+      </main>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <Link href="/torneos" className="text-sm text-blue-700 hover:underline dark:text-blue-400">← Volver a la programación</Link>
+    <main className="role-page tournaments-page">
+      <RoleNavbar role={session.user.roles[0]} fullName={session.user.fullName} onLogout={logout} />
+      <section className="tournaments-content">
+        <Link className="back-link" href="/torneos">← Volver a la programación</Link>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>}
-      {!match && !error && <p className="text-sm text-zinc-500">Cargando…</p>}
+        {error && <p role="alert" className="admin-error">{error}</p>}
+        {!match && !error && <p className="admin-loading">Cargando el partido…</p>}
 
-      {match && (
-        <article className="space-y-5">
-          <header className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={match.status} />
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-300">{TYPE_LABELS[match.type]}</span>
+        {match && (
+          <>
+            <div className="admin-page-heading">
+              <div>
+                <p className="eyebrow">{match.teams.sport.toUpperCase()} · {TYPE_LABELS[match.type].toUpperCase()}</p>
+                <h1>{match.tournament}</h1>
+                <p>{match.teams.icesi} vs {match.teams.opponent ?? "Rival por confirmar"}</p>
+              </div>
+              <MatchStatusPill status={match.status} />
             </div>
-            <h1 className="text-2xl font-semibold">{match.tournament}</h1>
-            <p className="text-sm text-zinc-500">{match.teams.sport}</p>
-          </header>
 
-          <dl className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-            <Row label="Equipos">
-              {match.teams.icesi} vs {match.teams.opponent ?? <span className="text-zinc-500">Rival por confirmar</span>}
-            </Row>
-            <Row label="Fecha y hora">{formatMatchRange(match)}</Row>
-            <Row label="Escenario">{match.venue.name}</Row>
-            <Row label="Dirección">
-              {match.venue.address ? (
-                <>
-                  {match.venue.address}
+            <div className="match-detail">
+              <article className="admin-panel">
+                <div className="admin-panel-heading">
+                  <h2>Partido</h2>
+                </div>
+                <dl className="match-facts">
+                  <div>
+                    <dt>EQUIPOS</dt>
+                    <dd>
+                      {match.teams.icesi} vs {match.teams.opponent ?? <span className="match-muted">Rival por confirmar</span>}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>FECHA Y HORA</dt>
+                    <dd>{formatMatchRange(match)}</dd>
+                  </div>
+                  <div>
+                    <dt>TORNEO</dt>
+                    <dd>{match.tournament}</dd>
+                  </div>
+                </dl>
+              </article>
+
+              <article className="admin-panel">
+                <div className="admin-panel-heading">
+                  <h2>Ubicación</h2>
+                </div>
+                <dl className="match-facts">
+                  <div>
+                    <dt>ESCENARIO</dt>
+                    <dd>{match.venue.name}</dd>
+                  </div>
+                  <div>
+                    <dt>DIRECCIÓN</dt>
+                    <dd>{match.venue.address ?? <span className="match-muted">No disponible</span>}</dd>
+                  </div>
+                </dl>
+                {match.venue.address && (
                   <a
+                    className="primary-button match-map-link"
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(match.venue.address)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-2 text-sm text-blue-700 hover:underline dark:text-blue-400"
                   >
-                    Ver en el mapa
+                    Ver en el mapa <span>↗</span>
                   </a>
-                </>
-              ) : (
-                <span className="text-zinc-500">No disponible</span>
-              )}
-            </Row>
-          </dl>
-        </article>
-      )}
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid gap-1 p-4 sm:grid-cols-3">
-      <dt className="text-sm font-medium text-zinc-500">{label}</dt>
-      <dd className="sm:col-span-2">{children}</dd>
-    </div>
+                )}
+              </article>
+            </div>
+          </>
+        )}
+      </section>
+    </main>
   );
 }
