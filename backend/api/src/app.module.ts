@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { CompetitionsModule } from './competitions/competitions.module';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
+import { TournamentsModule } from './tournaments/tournaments.module';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { UsersModule } from './users/users.module';
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
-    AuthModule, UsersModule, RolesModule, CompetitionsModule,
+    AuthModule, UsersModule, RolesModule, CompetitionsModule,TournamentsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
