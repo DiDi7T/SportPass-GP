@@ -12,8 +12,10 @@ export default function RoleNavbar({
   fullName,
   onLogout,
 }: RoleNavbarProps) {
+  // Competencias (HU4/HU6) es para quien tiene competitions:manage: entrenador y administrador.
+  const managesCompetitions = role !== "athlete";
   const placeholders =
-    role === "admin" ? ["Opción 2"] : ["Opción 2", "Opción 3"];
+    role === "athlete" ? ["Opción 2", "Opción 3"] : role === "coach" ? ["Opción 3"] : [];
   const renderLinks = () => (
     <>
       <span className="role-menu-title">{roleNames[role]}</span>
@@ -21,6 +23,11 @@ export default function RoleNavbar({
       <Link className="role-menu-placeholder role-menu-link" href="/torneos">
         Torneos
       </Link>
+      {managesCompetitions && (
+        <Link className="role-menu-placeholder role-menu-link" href="/competencias">
+          Competencias
+        </Link>
+      )}
       {placeholders.map((label) => (
         <span className="role-menu-placeholder" key={label}>
           {label}

@@ -49,36 +49,37 @@ export function EditCompetitionDialog({ competition, onClose, onUpdated }: {
     <dialog
       ref={dialog}
       onClose={onClose}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl bg-white p-0 text-zinc-900 backdrop:bg-black/40 dark:bg-zinc-900 dark:text-zinc-100"
+      className="m-auto w-[calc(100%-2rem)] max-w-md border-t-4 border-(--icesi) bg-white p-0 text-(--ink) backdrop:bg-[#191d4c]/50"
     >
-      <form onSubmit={submit} noValidate className="space-y-4 p-5">
+      <form onSubmit={submit} noValidate className="space-y-4 p-6 text-base">
         <div>
-          <h2 className="text-lg font-semibold">Editar competencia</h2>
-          <p className="text-sm text-zinc-500">{competition.name} · {competition.team.name}</p>
+          <p className="eyebrow mb-2!">EDITAR COMPETENCIA</p>
+          <h2 className="text-xl font-bold">{competition.name}</h2>
+          <p className="text-(--muted)">{competition.team.name}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm font-medium">
+          <label className="block font-bold">
             Fecha de inicio
             <input type="date" className="input mt-1" value={form.startDate} onChange={set("startDate")} />
           </label>
-          <label className="block text-sm font-medium">
+          <label className="block font-bold">
             Hora de inicio
             <input type="time" className="input mt-1" value={form.startTime} onChange={set("startTime")} />
           </label>
-          <label className="block text-sm font-medium">
+          <label className="block font-bold">
             Fecha de fin
             <input type="date" className="input mt-1" value={form.endDate} min={form.startDate || undefined} onChange={set("endDate")} />
           </label>
-          <label className="block text-sm font-medium">
+          <label className="block font-bold">
             Hora de fin
             <input type="time" className="input mt-1" value={form.endTime} onChange={set("endTime")} />
           </label>
         </div>
-        <label className="block text-sm font-medium">
+        <label className="block font-bold">
           Lugar
           <input className="input mt-1" value={form.location} onChange={set("location")} maxLength={200} />
         </label>
-        {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="admin-error">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={() => dialog.current?.close()} className="btn-secondary">Cancelar</button>
           <button className="btn-primary" disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</button>
