@@ -5,8 +5,13 @@ import { User } from '../../users/entities/user.entity';
 export const COMPETITION_TYPES = ['local', 'regional', 'nacional'] as const;
 export type CompetitionType = (typeof COMPETITION_TYPES)[number];
 
+// "finalizada" no se guarda: se calcula cuando ya pasó la fecha y hora de fin.
+export const COMPETITION_STATUSES = ['programada', 'aplazada', 'cancelada'] as const;
+export type CompetitionStatus = (typeof COMPETITION_STATUSES)[number];
+
 @Entity('competitions')
 @Check('competitions_type', `type IN ('local', 'regional', 'nacional')`)
+@Check('competitions_status', `status IN ('programada', 'aplazada', 'cancelada')`)
 @Check('competitions_end_after_start', `(end_date + end_time) > (start_date + start_time)`)
 export class Competition {
   @PrimaryGeneratedColumn('uuid') id!: string;
@@ -18,6 +23,9 @@ export class Competition {
   @Column({ name: 'end_time', type: 'time' }) endTime!: string;
   @Column({ type: 'varchar', length: 200 }) location!: string;
   @Column({ type: 'varchar', length: 20 }) type!: CompetitionType;
+  @Column({ type: 'varchar', length: 20, default: 'programada' }) status!: CompetitionStatus;
+  @Column({ type: 'varchar', length: 160, nullable: true }) opponent!: string | null;
+  @Column({ name: 'venue_address', type: 'varchar', length: 255, nullable: true }) venueAddress!: string | null;
   @Column({ name: 'created_by', type: 'uuid' }) createdById!: string;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' }) updatedAt!: Date;
