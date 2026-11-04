@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { AccessGuard } from '../auth/guards/access.guard';
 import { PermissionGuard } from '../auth/guards/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { type Actor, CompetitionsService } from './competitions.service';
+import { CancelCompetitionDto } from './dto/cancel-competition.dto';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { UpdateCompetitionDto } from './dto/update-competition.dto';
 
@@ -32,5 +33,10 @@ export class CompetitionsController {
 
   @Patch(':id') update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCompetitionDto, @Req() request: AuthRequest) {
     return this.competitions.update(id, dto, request.user);
+  }
+
+  // HU7: cancelar con motivo obligatorio. Solo el entrenador del equipo (se valida en el servicio).
+  @Post(':id/cancel') @HttpCode(200) cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelCompetitionDto, @Req() request: AuthRequest) {
+    return this.competitions.cancel(id, dto, request.user);
   }
 }

@@ -1,7 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Team } from '../teams/entities/team.entity';
+import { CompetitionCancellationEffects } from './competition-cancellation.effects';
+import { CANCELLATION_REASON_REQUIRED, CancelCompetitionDto } from './dto/cancel-competition.dto';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { UpdateCompetitionDto } from './dto/update-competition.dto';
 import { Competition } from './entities/competition.entity';
@@ -20,8 +22,18 @@ const isRealDate = (value: string) => {
 };
 const toInstant = (date: string, time: string) => new Date(`${date}T${time.slice(0, 5)}:00${BOGOTA_OFFSET}`);
 const isAdmin = (actor: Actor) => (actor.roles ?? []).includes('admin');
+const hasEnded = (competition: Competition, now: Date) => toInstant(competition.endDate, competition.endTime) <= now;
 
-const toResponse = (competition: Competition) => ({
+// HU7 CA4: solo el entrenador asignado al equipo cancela (ni siquiera el administrador),
+// y solo mientras la competencia no esté cancelada ni haya terminado.
+const canCancel = (competition: Competition, actor: Actor, now = new Date()) =>
+  competition.team?.coach?.id === actor.sub && competition.status !== 'cancelada' && !hasEnded(competition, now);
+
+// HU7 CA3: una competencia cancelada no admite nuevas solicitudes de permiso.
+// La solicitud de permiso (SCRUM-14, Sprint 2) debe consultar esta regla antes de crear una.
+export const acceptsPermissionRequests = (competition: Pick<Competition, 'status'>) => competition.status !== 'cancelada';
+
+const toResponse = (competition: Competition, actor: Actor) => ({
   id: competition.id,
   name: competition.name,
   team: competition.team ? { id: competition.team.id, name: competition.team.name, sport: competition.team.sport } : { id: competition.teamId },
@@ -31,6 +43,10 @@ const toResponse = (competition: Competition) => ({
   endTime: competition.endTime.slice(0, 5),
   location: competition.location,
   type: competition.type,
+  status: competition.status,
+  // HU7 CA3: la competencia cancelada conserva su motivo y fecha de cancelación.
+  cancellation: competition.status === 'cancelada' ? { reason: competition.cancellationReason, cancelledAt: competition.cancelledAt } : null,
+  canCancel: canCancel(competition, actor),
   createdAt: competition.createdAt,
   updatedAt: competition.updatedAt,
 });
@@ -40,6 +56,7 @@ export class CompetitionsService {
   constructor(
     @InjectRepository(Competition) private readonly competitions: Repository<Competition>,
     @InjectRepository(Team) private readonly teams: Repository<Team>,
+    private readonly cancellationEffects: CompetitionCancellationEffects,
   ) {}
 
   validateSchedule(schedule: Schedule, now = new Date()) {
@@ -93,21 +110,24 @@ export class CompetitionsService {
   }
 
   async findManaged(actor: Actor, teamId?: string) {
+    // El entrenador del equipo se carga para calcular canCancel (HU7); no se expone en la respuesta.
     const query = this.competitions.createQueryBuilder('competition')
       .innerJoinAndSelect('competition.team', 'team')
+      .leftJoinAndSelect('team.coach', 'coach')
       .orderBy('competition.startDate', 'ASC')
       .addOrderBy('competition.startTime', 'ASC');
-    if (!isAdmin(actor)) query.innerJoin('team.coach', 'coach').andWhere('coach.id = :coachId', { coachId: actor.sub });
+    if (!isAdmin(actor)) query.andWhere('coach.id = :coachId', { coachId: actor.sub });
     if (teamId) query.andWhere('team.id = :teamId', { teamId });
-    return (await query.getMany()).map(toResponse);
+    return (await query.getMany()).map(competition => toResponse(competition, actor));
   }
 
   async findOne(id: string, actor: Actor) {
-    return toResponse(await this.findManageable(id, actor));
+    return toResponse(await this.findManageable(id, actor), actor);
   }
 
   async update(id: string, dto: UpdateCompetitionDto, actor: Actor) {
     const competition = await this.findManageable(id, actor);
+    if (competition.status === 'cancelada') throw new ConflictException('No se puede editar una competencia cancelada.');
     const changes = Object.fromEntries(Object.entries(dto).filter(([, value]) => value !== undefined)) as UpdateCompetitionDto;
     if (Object.keys(changes).length === 0) throw new BadRequestException('Debes modificar al menos la fecha, la hora o el lugar.');
     if (changes.location !== undefined) {
@@ -121,6 +141,28 @@ export class CompetitionsService {
     if (SCHEDULE_FIELDS.some(field => changes[field] !== undefined)) this.validateSchedule(next);
 
     await this.competitions.update({ id }, changes);
+    return this.findOne(id, actor);
+  }
+
+  // HU7: cancelar no borra la competencia. Queda "cancelada" con su motivo, quién la canceló y cuándo.
+  async cancel(id: string, dto: CancelCompetitionDto, actor: Actor, now = new Date()) {
+    const competition = await this.competitions.findOne({ where: { id }, relations: { team: { coach: true } } });
+    if (!competition) throw new NotFoundException('Competencia no encontrada.');
+    if (competition.team.coach?.id !== actor.sub) throw new ForbiddenException('Solo el entrenador del equipo puede cancelar esta competencia.');
+    if (competition.status === 'cancelada') throw new ConflictException('La competencia ya está cancelada.');
+    if (hasEnded(competition, now)) throw new BadRequestException('No se puede cancelar una competencia que ya finalizó.');
+    const reason = dto.reason?.trim();
+    if (!reason) throw new BadRequestException(CANCELLATION_REASON_REQUIRED);
+
+    const cancellation = { status: 'cancelada' as const, cancellationReason: reason, cancelledById: actor.sub, cancelledAt: now };
+    const cancelled = { ...competition, ...cancellation };
+    const annulledRequests = await this.competitions.manager.transaction(async manager => {
+      // La condición sobre el estado evita cancelar dos veces si llegan dos peticiones a la vez.
+      const { affected } = await manager.update(Competition, { id, status: Not('cancelada') }, cancellation);
+      if (!affected) throw new ConflictException('La competencia ya está cancelada.');
+      return this.cancellationEffects.annulPermissionRequests(cancelled, manager);
+    });
+    await this.cancellationEffects.notifyCancellation(cancelled, annulledRequests);
     return this.findOne(id, actor);
   }
 }
