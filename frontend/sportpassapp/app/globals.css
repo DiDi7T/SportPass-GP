@@ -1883,6 +1883,186 @@ button {
   }
 }
 
+/* Oferta de torneos (HU8): programación y detalle de partidos. */
+.role-menu-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.tournaments-content {
+  width: min(100%, 1600px);
+  margin: 0 auto;
+  padding: 35px clamp(24px, 6vw, 96px) 72px;
+}
+.tournaments-content > .back-link {
+  margin-bottom: 34px;
+  font-size: 16px;
+}
+.tournaments-page .admin-page-heading {
+  flex-wrap: wrap;
+}
+.tournaments-page .admin-page-heading p:last-child {
+  font-size: 17px;
+}
+.tournaments-page .admin-error,
+.tournaments-page .admin-loading {
+  font-size: 16px;
+}
+.match-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.match-card {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--icesi);
+  background: #fff;
+  transition:
+    background 0.18s,
+    transform 0.18s;
+}
+.match-card:hover {
+  background: #f6f6ff;
+  transform: translateY(-1px);
+}
+.match-card.is-aplazada {
+  border-left-color: var(--orange);
+}
+.match-card.is-cancelada {
+  border-left-color: #d79b9b;
+}
+.match-card.is-cancelada .match-teams {
+  text-decoration: line-through;
+  text-decoration-color: #b9b9c6;
+}
+.match-card.is-finalizada {
+  border-left-color: #c9cad3;
+}
+.match-date {
+  display: grid;
+  justify-items: center;
+  padding: 10px 0;
+  background: var(--lavender);
+  color: var(--icesi);
+}
+.match-date strong {
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.match-date span {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.match-info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.match-tournament {
+  color: var(--icesi);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.match-teams {
+  color: var(--ink);
+  font-size: 19px;
+  letter-spacing: -0.3px;
+}
+.match-tags {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+.match-type {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.match-status {
+  display: inline-block;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.match-status-programada {
+  background: #eff9f2;
+  color: #267245;
+}
+.match-status-aplazada {
+  background: #fff3ec;
+  color: #b2471f;
+}
+.match-status-cancelada {
+  background: #fff2f2;
+  color: #9a2929;
+}
+.match-status-finalizada {
+  background: #f1f1f4;
+  color: var(--muted);
+}
+.match-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.tournaments-page .admin-panel-heading h2 {
+  font-size: 21px;
+}
+.match-facts {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+}
+.match-facts dt {
+  color: var(--icesi);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.match-facts dd {
+  margin: 5px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.match-muted {
+  color: var(--muted);
+}
+.match-map-link {
+  margin-top: 24px;
+}
+@media (max-width: 760px) {
+  .match-card {
+    grid-template-columns: 62px minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
+    padding: 16px;
+  }
+  .match-tags {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .match-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
 @layer components {
   .input {
     @apply block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-blue-900;

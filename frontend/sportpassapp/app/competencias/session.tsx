@@ -13,8 +13,7 @@ export function useSession() {
 
 // Login mínimo para probar las pantallas de competencias mientras se integra el
 // inicio de sesión definitivo (HU1). Usa los mismos endpoints de /api/auth.
-// `permission` en null deja pasar a cualquier usuario autenticado (p. ej. /torneos).
-export function SessionGate({ children, permission = "competitions:manage" }: { children: ReactNode; permission?: string | null }) {
+export function SessionGate({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [checking, setChecking] = useState(true);
 
@@ -28,7 +27,7 @@ export function SessionGate({ children, permission = "competitions:manage" }: { 
 
   if (checking) return <p className="p-6 text-center text-sm text-zinc-500">Cargando…</p>;
   if (!user) return <LoginForm onLogin={setUser} />;
-  if (permission && !user.permissions.includes(permission)) {
+  if (!user.permissions.includes("competitions:manage")) {
     return (
       <div className="mx-auto mt-16 max-w-sm space-y-4 p-6 text-center">
         <p className="text-sm text-zinc-700 dark:text-zinc-300">Tu cuenta no tiene permiso para gestionar competencias.</p>

@@ -2,58 +2,84 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import RoleNavbar from "@/components/role-navbar";
+import { dashboardPath } from "@/lib/auth";
 import { TYPE_LABELS } from "@/lib/competitions";
-import { fetchMatches, formatMatchRange, matchup, type Match } from "@/lib/tournaments";
-import { useSession } from "../competencias/session";
-import { StatusBadge } from "./status-badge";
+import { dateBadge, fetchMatches, formatMatchRange, matchup, type Match } from "@/lib/tournaments";
+import { MatchStatusPill } from "./status-pill";
+import { useRoleSession } from "./use-role-session";
 
 export default function TournamentsPage() {
-  const { user, signOut } = useSession();
+  const { session, logout, handleAuthError } = useRoleSession();
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMatches().then(setMatches).catch((err) => setError(err.message));
-  }, []);
+    if (!session) return;
+    fetchMatches()
+      .then(setMatches)
+      .catch((err) => {
+        handleAuthError(err);
+        setError(err.message);
+      });
+    // handleAuthError solo redirige; no debe volver a disparar la consulta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  if (!session) {
+    return (
+      <main className="dashboard-shell">
+        <p className="dashboard-loading">Cargando la programación…</p>
+      </main>
+    );
+  }
+  const role = session.user.roles[0];
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Programación de partidos</h1>
-          <p className="text-sm text-zinc-500">{user.fullName}</p>
+    <main className="role-page tournaments-page">
+      <RoleNavbar role={role} fullName={session.user.fullName} onLogout={logout} />
+      <section className="tournaments-content">
+        <Link className="back-link" href={dashboardPath(role)}>← Volver a mi inicio</Link>
+
+        <div className="admin-page-heading">
+          <div>
+            <p className="eyebrow">SPORTPASS · OFERTA DE TORNEOS</p>
+            <h1>Programación de partidos</h1>
+            <p>Consulta dónde y cuándo juegan los equipos representativos de Icesi.</p>
+          </div>
+          {matches && <span className="role-chip">{matches.length} partidos</span>}
         </div>
-        <button onClick={signOut} className="text-sm text-zinc-500 hover:underline">Salir</button>
-      </header>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>}
+        {error && <p role="alert" className="admin-error">{error}</p>}
+        {matches === null && !error && <p className="admin-loading">Cargando partidos…</p>}
+        {matches?.length === 0 && <p className="admin-loading">Aún no hay partidos programados.</p>}
 
-      <section aria-label="Partidos" className="space-y-3">
-        {matches === null && !error && <p className="text-sm text-zinc-500">Cargando…</p>}
-        {matches?.length === 0 && <p className="text-sm text-zinc-500">Aún no hay partidos programados.</p>}
-        <ul className="space-y-3">
-          {matches?.map((match) => (
-            <li key={match.id}>
-              <Link
-                href={`/torneos/${match.id}`}
-                className="block space-y-1 rounded-xl border border-zinc-200 p-4 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className={`font-medium ${match.status === "cancelada" ? "line-through decoration-zinc-400" : ""}`}>{matchup(match)}</p>
-                  <StatusBadge status={match.status} />
-                </div>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{match.tournament}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{formatMatchRange(match)}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{match.venue.name}</p>
-                <p className="flex flex-wrap gap-2 pt-1 text-xs">
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 dark:bg-zinc-800">{match.teams.sport}</span>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-800 dark:bg-blue-950 dark:text-blue-300">{TYPE_LABELS[match.type]}</span>
-                </p>
-              </Link>
-            </li>
-          ))}
+        <ul className="match-list" aria-label="Partidos">
+          {matches?.map((match) => {
+            const date = dateBadge(match.startDate);
+            return (
+              <li key={match.id}>
+                <Link href={`/torneos/${match.id}`} className={`match-card is-${match.status}`}>
+                  <span className="match-date">
+                    <strong>{date.day}</strong>
+                    <span>{date.month}</span>
+                  </span>
+                  <span className="match-info">
+                    <span className="match-tournament">{match.tournament}</span>
+                    <strong className="match-teams">{matchup(match)}</strong>
+                    <span>{formatMatchRange(match)}</span>
+                    <span>{match.venue.name}</span>
+                  </span>
+                  <span className="match-tags">
+                    <MatchStatusPill status={match.status} />
+                    <span className="match-type">{match.teams.sport} · {TYPE_LABELS[match.type]}</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </section>
-    </div>
+    </main>
   );
 }

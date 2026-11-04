@@ -13,12 +13,14 @@ export default function RoleNavbar({
   onLogout,
 }: RoleNavbarProps) {
   const placeholders =
-    role === "admin"
-      ? ["Opción 1", "Opción 2"]
-      : ["Opción 1", "Opción 2", "Opción 3"];
+    role === "admin" ? ["Opción 2"] : ["Opción 2", "Opción 3"];
   const renderLinks = () => (
     <>
       <span className="role-menu-title">{roleNames[role]}</span>
+      {/* Oferta de torneos (HU8): disponible para todos los roles. */}
+      <Link className="role-menu-placeholder role-menu-link" href="/torneos">
+        Torneos
+      </Link>
       {placeholders.map((label) => (
         <span className="role-menu-placeholder" key={label}>
           {label}
