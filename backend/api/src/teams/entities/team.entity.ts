@@ -12,6 +12,11 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { TeamAthlete } from '../../team-athletes/entities/team-athlete.entity';
 
+
+// Copia de la entidad Team de la rama feat/load-athletes (HU2), sin la relación
+// teamAthletes. Debe mantenerse idéntica en columnas: todos usan la misma BD con
+// synchronize y cualquier diferencia hace que TypeORM intente alterar la tabla.
+// Al unir con esa rama, quedarse con su versión.
 @Entity('teams')
 export class Team {
   @PrimaryGeneratedColumn('uuid')
