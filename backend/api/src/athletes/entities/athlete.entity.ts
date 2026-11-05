@@ -17,7 +17,7 @@ export class Athlete {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @OneToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
+  @OneToOne(() => User, (user) => user.athlete, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
@@ -28,12 +28,6 @@ export class Athlete {
     unique: true,
   })
   studentCode!: string;
-
-  @Column({ name: 'first_name', type: 'varchar', length: 100 })
-  firstName!: string;
-
-  @Column({ name: 'last_name', type: 'varchar', length: 100 })
-  lastName!: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

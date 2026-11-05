@@ -18,8 +18,6 @@ import type { AthleteImportResult } from './interfaces/athlete-import-result.int
 interface RosterRow {
   email: string;
   student_code: string;
-  first_name: string;
-  last_name: string;
 }
 
 export interface RosterImportResult {
@@ -159,14 +157,10 @@ export class RosterImportService {
         athlete = athleteRepository.create({
           user,
           studentCode,
-          firstName: row.first_name.trim(),
-          lastName: row.last_name.trim(),
           isActive: true,
         });
       } else {
         athlete.studentCode = studentCode;
-        athlete.firstName = row.first_name.trim();
-        athlete.lastName = row.last_name.trim();
         athlete.isActive = true;
       }
 
@@ -319,14 +313,10 @@ export class RosterImportService {
         athlete = athleteRepository.create({
           user,
           studentCode,
-          firstName: row.first_name.trim(),
-          lastName: row.last_name.trim(),
           isActive: true,
         });
       } else {
         athlete.studentCode = studentCode;
-        athlete.firstName = row.first_name.trim();
-        athlete.lastName = row.last_name.trim();
         athlete.isActive = true;
       }
 
@@ -411,8 +401,6 @@ export class RosterImportService {
     const requiredHeaders = [
       'email',
       'student_code',
-      'first_name',
-      'last_name',
     ];
 
     const headers = Object.keys(rows[0]);
@@ -433,10 +421,7 @@ export class RosterImportService {
   private validateRow(row: RosterRow): void {
     const email = String(row.email ?? '').trim();
     const studentCode = String(row.student_code ?? '').trim();
-    const firstName = String(row.first_name ?? '').trim();
-    const lastName = String(row.last_name ?? '').trim();
-
-    if (!email || !studentCode || !firstName || !lastName) {
+    if (!email || !studentCode) {
       throw new Error('Todos los campos son obligatorios.');
     }
 
@@ -454,10 +439,5 @@ export class RosterImportService {
       );
     }
 
-    if (firstName.length > 100 || lastName.length > 100) {
-      throw new Error(
-        'El nombre o apellido supera los 100 caracteres.',
-      );
-    }
   }
 }

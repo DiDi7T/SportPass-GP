@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   const users = { createQueryBuilder: jest.fn() };
+  const athletes = { findOne: jest.fn() };
   const sessions = { create: jest.fn(), save: jest.fn() };
   const jwt = { signAsync: jest.fn() };
   const config = { get: jest.fn((_key: string, fallback: string) => fallback) };
@@ -11,7 +12,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AuthService(users as any, sessions as any, jwt as any, config as any);
+    service = new AuthService(users as any, athletes as any, sessions as any, jwt as any, config as any);
   });
 
   it('rejects login emails outside the university domain', async () => {
