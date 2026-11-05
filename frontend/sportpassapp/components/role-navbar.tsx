@@ -32,6 +32,16 @@ export default function RoleNavbar({
         Torneos
       </Link>
 
+      {/* Exclusivo para entrenadores */}
+      {role === "coach" && (
+        <Link
+          className="role-menu-placeholder role-menu-link"
+          href="/coach/teams"
+        >
+          Mis equipos
+        </Link>
+      )}
+
       {/* Entrenadores y administradores */}
       {managesCompetitions && (
         <Link

@@ -136,7 +136,7 @@ export default function AthletesPage() {
 
           <Link
             href="/admin/athlete/import"
-            className="btn btn-primary"
+            className="primary-button"
           >
             + Importar deportistas
           </Link>

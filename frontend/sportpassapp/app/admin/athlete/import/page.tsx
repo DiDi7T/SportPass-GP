@@ -371,7 +371,7 @@ export default function ImportAthletesPage() {
 
               <div className="card-actions justify-end mt-4">
                 <Link
-                  href="/admin/management/athletes"
+                  href="/admin/athlete"
                   className="btn btn-primary"
                 >
                   Ver deportistas

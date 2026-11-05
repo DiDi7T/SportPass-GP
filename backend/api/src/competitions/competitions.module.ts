@@ -1,12 +1,35 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AuthModule } from '../auth/auth.module';
 import { Session } from '../auth/entities/session.entity';
 import { Team } from '../teams/entities/team.entity';
+
+import { Athlete } from '../athletes/entities/athlete.entity';
+import { TeamAthlete } from '../team-athletes/entities/team-athlete.entity';
+
 import { CompetitionCancellationEffects } from './competition-cancellation.effects';
 import { CompetitionsController } from './competitions.controller';
 import { CompetitionsService } from './competitions.service';
 import { Competition } from './entities/competition.entity';
+import { CompetitionCallup } from './entities/competition-callup.entity';
 
-@Module({ imports: [TypeOrmModule.forFeature([Competition, Team, Session]), AuthModule], controllers: [CompetitionsController], providers: [CompetitionsService, CompetitionCancellationEffects] })
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      Competition,
+      CompetitionCallup,
+      Team,
+      TeamAthlete,
+      Athlete,
+      Session,
+    ]),
+    AuthModule,
+  ],
+  controllers: [CompetitionsController],
+  providers: [
+    CompetitionsService,
+    CompetitionCancellationEffects,
+  ],
+})
 export class CompetitionsModule {}

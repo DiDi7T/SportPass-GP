@@ -161,8 +161,7 @@ export default function TeamsPage() {
 
           <Link
             href="/admin/management/teams/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-800"
-          >
+            className="primary-button">
             <span className="text-xl">+</span>
             Crear equipo
           </Link>
@@ -173,7 +172,7 @@ export default function TeamsPage() {
           <StatCard
             label="Total de equipos"
             value={teams.length}
-            icon="🏆"
+            icon=""
           />
           <StatCard
             label="Equipos activos"

@@ -46,6 +46,43 @@ export type CompetitionForm = {
   type: CompetitionType | "";
 };
 
+export type CallupAthlete = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  studentCode: string;
+  email: string;
+  calledUp: boolean;
+};
+
+export type CompetitionCallup = {
+  competitionId: string;
+  competitionName: string;
+  teamId: string;
+  athletes: CallupAthlete[];
+};
+
+export type SaveCallupInput = {
+  athleteIds: string[];
+};
+
+export const fetchCompetitionCallup = (competitionId: string) =>
+  apiFetch<CompetitionCallup>(
+    `/competitions/${competitionId}/callup`
+  );
+
+export const saveCompetitionCallup = (
+  competitionId: string,
+  data: SaveCallupInput
+) =>
+  apiFetch<CompetitionCallup>(
+    `/competitions/${competitionId}/callup`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
 export type ScheduleChanges = Partial<Pick<Competition, "startDate" | "endDate" | "startTime" | "endTime" | "location">>;
 
 export const MESSAGES = {

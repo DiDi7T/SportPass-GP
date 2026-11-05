@@ -140,14 +140,31 @@ function Competitions() {
                 </div>
                 {/* Una competencia cancelada no se edita ni se vuelve a cancelar (HU7). */}
                 {!cancelled && (
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setEditing(competition)} className="btn-secondary">Editar</button>
-                    {/* HU7 CA4: solo el entrenador del equipo ve la opción; el backend también lo valida. */}
-                    {competition.canCancel && (
-                      <button onClick={() => setCancelling(competition)} className="btn-danger-outline">Cancelar competencia</button>
-                    )}
-                  </div>
-                )}
+  <div className="flex flex-wrap gap-2">
+    <Link
+      href={`/competencias/${competition.id}/convocatoria`}
+      className="btn-secondary"
+    >
+      Gestionar convocatoria
+    </Link>
+
+    <button
+      onClick={() => setEditing(competition)}
+      className="btn-secondary"
+    >
+      Editar
+    </button>
+
+    {competition.canCancel && (
+      <button
+        onClick={() => setCancelling(competition)}
+        className="btn-danger-outline"
+      >
+        Cancelar competencia
+      </button>
+    )}
+  </div>
+)}
               </li>
             );
           })}

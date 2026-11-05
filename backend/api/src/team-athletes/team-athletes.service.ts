@@ -1,8 +1,11 @@
+
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -24,14 +27,65 @@ export class TeamAthletesService {
     private readonly athleteRepository: Repository<Athlete>,
   ) {}
 
-  async findByTeam(teamId: string): Promise<TeamAthlete[]> {
+  // Comprueba que el equipo exista y que el usuario sea su entrenador.
+  private async validateCoach(
+    teamId: string,
+    userId: string,
+  ): Promise<Team> {
     const team = await this.teamRepository.findOne({
       where: { id: teamId },
+      relations: { coach: true },
     });
 
     if (!team) {
       throw new NotFoundException('El equipo no existe');
     }
+
+    if (!team.coach || team.coach.id !== userId) {
+      throw new ForbiddenException(
+        'No eres el entrenador asignado a este equipo',
+      );
+    }
+
+    return team;
+  }
+
+  // Deportistas que todavía no pertenecen al equipo.
+  async findAvailable(
+    teamId: string,
+    userId: string,
+  ): Promise<Athlete[]> {
+    await this.validateCoach(teamId, userId);
+
+    return this.athleteRepository
+      .createQueryBuilder('athlete')
+      .innerJoinAndSelect('athlete.user', 'user')
+      .where('athlete.isActive = :active', { active: true })
+      .andWhere('user.isActive = :active', { active: true })
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('1')
+          .from(TeamAthlete, 'ta')
+          .where('ta.athlete_id = athlete.id')
+          .andWhere('ta.team_id = :teamId')
+          .andWhere('ta.active = true')
+          .getQuery();
+
+        return `NOT EXISTS ${subQuery}`;
+      })
+      .setParameter('teamId', teamId)
+      .orderBy('athlete.lastName', 'ASC')
+      .addOrderBy('athlete.firstName', 'ASC')
+      .getMany();
+  }
+
+  // Consultar integrantes activos.
+  async findByTeam(
+    teamId: string,
+    userId: string,
+  ): Promise<TeamAthlete[]> {
+    await this.validateCoach(teamId, userId);
 
     return this.teamAthleteRepository.find({
       where: {
@@ -50,17 +104,13 @@ export class TeamAthletesService {
     });
   }
 
+  // Incorporar un deportista al equipo.
   async assign(
     teamId: string,
     dto: AssignAthleteDto,
+    userId: string,
   ): Promise<TeamAthlete> {
-    const team = await this.teamRepository.findOne({
-      where: { id: teamId },
-    });
-
-    if (!team) {
-      throw new NotFoundException('El equipo no existe');
-    }
+    const team = await this.validateCoach(teamId, userId);
 
     if (!team.isActive) {
       throw new ConflictException(
@@ -83,12 +133,13 @@ export class TeamAthletesService {
       );
     }
 
-    const existingAssignment = await this.teamAthleteRepository.findOne({
-      where: {
-        team: { id: teamId },
-        athlete: { id: dto.athleteId },
-      },
-    });
+    const existingAssignment =
+      await this.teamAthleteRepository.findOne({
+        where: {
+          team: { id: teamId },
+          athlete: { id: dto.athleteId },
+        },
+      });
 
     if (existingAssignment) {
       if (existingAssignment.active) {
@@ -112,11 +163,17 @@ export class TeamAthletesService {
     return this.teamAthleteRepository.save(assignment);
   }
 
-  async remove(id: string): Promise<TeamAthlete> {
+  // Retirar un deportista sin eliminar el historial.
+  async remove(
+    id: string,
+    userId: string,
+  ): Promise<TeamAthlete> {
     const assignment = await this.teamAthleteRepository.findOne({
       where: { id },
       relations: {
-        team: true,
+        team: {
+          coach: true,
+        },
         athlete: true,
       },
     });
@@ -124,6 +181,15 @@ export class TeamAthletesService {
     if (!assignment) {
       throw new NotFoundException(
         'La asignación del deportista no existe',
+      );
+    }
+
+    if (
+      !assignment.team.coach ||
+      assignment.team.coach.id !== userId
+    ) {
+      throw new ForbiddenException(
+        'No eres el entrenador asignado a este equipo',
       );
     }
 
