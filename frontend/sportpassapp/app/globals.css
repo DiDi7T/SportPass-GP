@@ -1,4 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", Arial, sans-serif;
+}
 
 :root {
   --icesi: #5454e9;
@@ -12,7 +17,9 @@
   --orange: #e9683b;
   --yellow: #e4eb60;
   --font-sans: "Plus Jakarta Sans", Arial, sans-serif;
+  
 }
+
 * {
   box-sizing: border-box;
 }
@@ -23,6 +30,7 @@ html, body {
   font-family: "Plus Jakarta Sans", Arial, sans-serif;
   color: var(--ink);
 }
+
 body {
   background: #fff;
 }

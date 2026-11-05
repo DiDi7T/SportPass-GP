@@ -126,7 +126,7 @@ export default function ImportAthletesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <main className="role-page admin-management-page import-athletes-page">
       <RoleNavbar
         role="admin"
         fullName={session.user.fullName}
@@ -223,13 +223,37 @@ export default function ImportAthletesPage() {
               </p>
 
               <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                className="file-input file-input-bordered w-full mt-4"
-                onChange={handleFileChange}
-                disabled={loading}
-              />
+  ref={fileInputRef}
+  type="file"
+  accept=".csv,text/csv"
+  className="hidden"
+  onChange={handleFileChange}
+  disabled={loading}
+/>
+
+<button
+  type="button"
+  className="btn btn-outline btn-primary w-full mt-4"
+  onClick={() => fileInputRef.current?.click()}
+  disabled={loading}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+  Seleccionar archivo CSV
+</button>
 
               {file && (
                 <div className="rounded-lg bg-base-200 p-3 mt-3">
@@ -357,6 +381,6 @@ export default function ImportAthletesPage() {
           </section>
         )}
       </main>
-    </div>
+    </main>
   );
 }
