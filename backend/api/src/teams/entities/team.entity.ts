@@ -4,11 +4,14 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { User } from '../../users/entities/user.entity';
+import { TeamAthlete } from '../../team-athletes/entities/team-athlete.entity';
+
 
 // Copia de la entidad Team de la rama feat/load-athletes (HU2), sin la relación
 // teamAthletes. Debe mantenerse idéntica en columnas: todos usan la misma BD con
@@ -37,4 +40,7 @@ export class Team {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+
+  @OneToMany(() => TeamAthlete, (teamAthlete) => teamAthlete.team)
+  teamAthletes!: TeamAthlete[];
 }

@@ -1704,16 +1704,39 @@ button {
 }
 
 /* Keep small text legible across role dashboards and admin settings. */
-.role-page .eyebrow,
-.role-page .role-chip,
-.role-page .role-quick-links p,
-.role-page .role-quick-links article > span,
+/* Keep small text legible across role dashboards and admin settings. */
+
+/* Navbar: mantener el mismo tamaño en todas las páginas */
 .role-page .role-menu-title,
 .role-page .role-menu-placeholder,
 .role-page .role-settings-link,
 .role-page .user-menu,
 .role-page .text-button,
 .role-page .role-mobile-menu > summary,
+.admin-management-page .role-menu-title,
+.admin-management-page .role-menu-placeholder,
+.admin-management-page .role-settings-link,
+.admin-management-page .user-menu,
+.admin-management-page .text-button,
+.admin-management-page .role-mobile-menu > summary {
+  font-size: 16px;
+}
+
+/* Icono de Ajustes */
+.role-page .role-settings-link span,
+.admin-management-page .role-settings-link span {
+  font-size: 17px;
+}
+
+/* Textos pequeños del dashboard */
+.role-page .eyebrow,
+.role-page .role-chip,
+.role-page .role-quick-links p,
+.role-page .role-quick-links article > span {
+  font-size: 16px;
+}
+
+/* Textos de administración */
 .admin-management-page .admin-summary,
 .admin-management-page .admin-summary > span,
 .admin-management-page .admin-tabs button span,
@@ -1740,142 +1763,135 @@ button {
 .admin-management-page .permission-option small,
 .admin-management-page .permission-catalog p,
 .admin-management-page .permission-catalog small {
-  font-size: 12px;
+  font-size: 16px;
 }
+
 .admin-management-page .admin-table th {
   letter-spacing: 0.04em;
 }
 
-/* Increase role-area typography by 4px; login styles stay independent. */
-.role-page .eyebrow,
-.role-page .role-chip,
-.role-page .role-welcome-card p:last-child,
-.role-page .role-quick-links p,
-.role-page .role-quick-links article > span,
-.role-page .role-menu-title,
-.role-page .role-menu-placeholder,
-.role-page .role-settings-link,
-.role-page .user-menu,
-.role-page .text-button,
-.role-page .role-mobile-menu > summary,
-.admin-management-page .eyebrow,
-.admin-management-page .admin-summary,
-.admin-management-page .admin-summary > span,
-.admin-management-page .admin-tabs button,
-.admin-management-page .admin-tabs button span,
-.admin-management-page .admin-notice,
-.admin-management-page .admin-error,
-.admin-management-page .admin-loading,
-.admin-management-page .admin-empty,
-.admin-management-page .admin-panel-heading p,
-.admin-management-page .admin-search,
-.admin-management-page .admin-search input,
-.admin-management-page .admin-table,
-.admin-management-page .admin-table th,
-.admin-management-page .admin-table td,
-.admin-management-page .admin-edit-button,
-.admin-management-page .admin-cancel-button,
-.admin-management-page .user-role-editor strong,
-.admin-management-page .user-role-editor p,
-.admin-management-page .user-role-options label,
-.admin-management-page .admin-user-roles span,
-.admin-management-page .role-count,
-.admin-management-page .status-pill,
-.admin-management-page .role-list strong,
-.admin-management-page .role-list small,
-.admin-management-page .delete-role-button,
-.admin-management-page .delete-role-confirmation p,
-.admin-management-page .create-role-form label,
-.admin-management-page .create-role-form input,
-.admin-management-page .permission-option strong,
-.admin-management-page .permission-option small,
-.admin-management-page .permission-code,
-.admin-management-page .permission-catalog p,
-.admin-management-page .permission-catalog small,
-.admin-management-page .back-link,
-.admin-management-page .role-menu-title,
-.admin-management-page .role-menu-placeholder,
-.admin-management-page .role-settings-link,
-.admin-management-page .user-menu,
-.admin-management-page .text-button {
-  font-size: 16px;
-}
-.admin-management-page .eyebrow {
-  font-size: 14px;
-}
+/* Aumentar tipografía del contenido del dashboard */
 .role-page .role-banner-copy h1 {
   font-size: clamp(48px, calc(6vw + 4px), 80px);
 }
+
 .role-page .role-banner-copy > p:last-child {
   font-size: 18px;
 }
+
 .role-page .role-section-heading h2 {
   font-size: clamp(26px, calc(2.6vw + 4px), 36px);
 }
-.role-page .role-settings-link span,
-.admin-management-page .role-settings-link span {
-  font-size: 21px;
+
+.role-page .role-welcome-card p:last-child {
+  font-size: 17px;
 }
+
 .role-page .role-welcome-card h3 {
   font-size: 22px;
 }
+
 .role-page .role-quick-links h3 {
   font-size: 18px;
 }
+
+/* Aumentar tipografía del contenido administrativo */
+.admin-management-page .eyebrow {
+  font-size: 16px;
+}
+
 .admin-management-page .admin-page-heading h1 {
   font-size: clamp(34px, calc(4vw + 4px), 52px);
 }
+
 .admin-management-page .admin-page-heading p:last-child {
   font-size: 17px;
 }
+
 .admin-management-page .admin-summary strong {
   font-size: 23px;
 }
+
+.admin-management-page .admin-tabs button {
+  font-size: 16px;
+}
+
+.admin-management-page .admin-notice,
+.admin-management-page .admin-error,
+.admin-management-page .admin-loading,
+.admin-management-page .admin-empty {
+  font-size: 16px;
+}
+
 .admin-management-page .admin-panel-heading h2 {
   font-size: 21px;
 }
+
+.admin-management-page .user-role-editor strong {
+  font-size: 16px;
+}
+
+.admin-management-page .permission-code {
+  font-size: 16px;
+}
+
 .admin-management-page .role-list-icon {
   font-size: 24px;
 }
+
 .admin-management-page .create-role-form h3 {
   font-size: 17px;
 }
+
 .admin-management-page .admin-submit {
   font-size: 17px;
 }
+
+/* Responsive */
 @media (max-width: 760px) {
   .role-page .role-banner-copy h1 {
     font-size: 56px;
   }
+
   .role-page .role-section-heading h2 {
     font-size: 28px;
   }
+
   .role-page .role-banner-copy > p:last-child {
     font-size: 16px;
   }
+
   .role-page .role-welcome-card h3 {
     font-size: 19px;
   }
+
+  /* Navbar móvil: mismo tamaño en todas las páginas */
+  .role-page .role-mobile-menu > summary,
+  .admin-management-page .role-mobile-menu > summary {
+    font-size: 11px;
+  }
+
   .admin-management-page .admin-page-heading p:last-child {
     font-size: 17px;
   }
+
   .role-page .logout-label-desktop,
   .admin-management-page .logout-label-desktop {
     display: none;
   }
+
   .role-page .logout-label-mobile,
   .admin-management-page .logout-label-mobile {
     display: inline;
   }
-  .admin-management-page .role-mobile-menu > summary {
-    font-size: 16px;
-  }
 }
+
 @media (max-width: 390px) {
   .role-page .role-banner-copy h1 {
     font-size: 49px;
   }
 }
+
 @media (min-width: 761px) {
   .role-page .logout-label-mobile,
   .admin-management-page .logout-label-mobile {
