@@ -3,8 +3,6 @@ import { apiFetch } from "@/lib/api";
 export type Athlete = {
   id: string;
   studentCode: string;
-  firstName: string;
-  lastName: string;
   isActive: boolean;
   user: {
     id: string;

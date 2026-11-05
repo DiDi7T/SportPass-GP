@@ -16,13 +16,6 @@ export default function RoleNavbar({
   // Competencias: entrenadores y administradores.
   const managesCompetitions = role !== "athlete";
 
-  const placeholders =
-    role === "athlete"
-      ? ["Opción 2", "Opción 3"]
-      : role === "coach"
-        ? ["Opción 3"]
-        : [];
-
   const renderLinks = () => (
     <>
       <span className="role-menu-title">{roleNames[role]}</span>
@@ -66,11 +59,13 @@ export default function RoleNavbar({
         </>
       )}
 
-      {placeholders.map((label) => (
-        <span className="role-menu-placeholder" key={label}>
-          {label}
-        </span>
-      ))}
+      {role === "athlete" && (
+        <>
+          <Link className="role-menu-placeholder role-menu-link" href="/athlete#activities">Opcion 2</Link>
+          <Link className="role-menu-placeholder role-menu-link" href="/athlete#community">Opcion 3</Link>
+        </>
+      )}
+      {role === "coach" && <span className="role-menu-placeholder">Opciones próximamente</span>}
     </>
   );
 
