@@ -15,12 +15,37 @@ export type RosterImportResult = {
   errors: RosterImportError[];
 };
 
-export function importRoster(teamId: string, file: File) {
+export function importTeamRoster(
+  teamId: string,
+  file: File,
+) {
   const formData = new FormData();
   formData.append("file", file);
 
   return apiFetch<RosterImportResult>(
     `/roster-import/teams/${teamId}`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+}
+
+// Importación general de deportistas
+
+export type AthleteImportResult = {
+  totalRows: number;
+  imported: number;
+  failed: number;
+  errors: RosterImportError[];
+};
+
+export function importAthletes(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return apiFetch<AthleteImportResult>(
+    "/athletes/import",
     {
       method: "POST",
       body: formData,

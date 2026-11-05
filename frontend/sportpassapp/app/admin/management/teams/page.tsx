@@ -124,7 +124,7 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <main className="role-page admin-management-page athletes-page">
       <RoleNavbar
         role="admin"
         fullName={session.user.fullName}
@@ -401,7 +401,7 @@ export default function TeamsPage() {
           )}
         </section>
       </main>
-    </div>
+    </main>
   );
 }
 

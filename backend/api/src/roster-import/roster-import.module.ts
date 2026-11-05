@@ -14,6 +14,7 @@ import { Athlete } from '../athletes/entities/athlete.entity';
 import { TeamAthlete } from '../team-athletes/entities/team-athlete.entity';
 
 import { AccessGuard } from '../auth/guards/access.guard';
+import { AthletesImportController } from './athletes-import.controller';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { AccessGuard } from '../auth/guards/access.guard';
     ]),
     AuthModule,
   ],
-  controllers: [RosterImportController],
+  controllers: [RosterImportController,AthletesImportController],
   providers: [
     RosterImportService,
     AccessGuard,
