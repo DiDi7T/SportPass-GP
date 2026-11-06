@@ -41,14 +41,22 @@ export default function LoginPage() {
         credentials: "include",
         body: JSON.stringify({ email: normalizedEmail, password }),
       });
-      if (!response.ok) throw new Error("login_failed");
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const message = Array.isArray(body?.message)
+          ? body.message.join(" ")
+          : typeof body?.message === "string"
+            ? body.message
+            : ERROR_MESSAGE;
+        throw new Error(message);
+      }
       const result = (await response.json()) as Session;
       if (!result.user?.roles?.length || !result.accessToken)
         throw new Error("invalid_response");
       localStorage.setItem(SESSION_KEY, JSON.stringify(result));
       router.replace(dashboardPath(result.user.roles[0]));
-    } catch {
-      setError(ERROR_MESSAGE);
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : ERROR_MESSAGE);
     } finally {
       setLoading(false);
     }

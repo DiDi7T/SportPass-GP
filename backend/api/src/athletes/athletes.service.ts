@@ -24,7 +24,7 @@ export class AthletesService {
   async findAll(): Promise<Athlete[]> {
     return this.athleteRepository.find({
       relations: { user: true },
-      order: { lastName: 'ASC' },
+      order: { user: { fullName: 'ASC' } },
     });
   }
 
@@ -74,8 +74,6 @@ export class AthletesService {
     const athlete = this.athleteRepository.create({
       user,
       studentCode: dto.studentCode,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
       isActive: dto.isActive ?? true,
     });
 
@@ -102,14 +100,6 @@ export class AthletesService {
 
     if (dto.studentCode !== undefined) {
       athlete.studentCode = dto.studentCode;
-    }
-
-    if (dto.firstName !== undefined) {
-      athlete.firstName = dto.firstName;
-    }
-
-    if (dto.lastName !== undefined) {
-      athlete.lastName = dto.lastName;
     }
 
     if (dto.isActive !== undefined) {

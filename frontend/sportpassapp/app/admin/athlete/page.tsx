@@ -103,8 +103,7 @@ export default function AthletesPage() {
     const text = search.toLowerCase();
 
     return (
-      athlete.firstName.toLowerCase().includes(text) ||
-      athlete.lastName.toLowerCase().includes(text) ||
+      athlete.user.fullName.toLowerCase().includes(text) ||
       athlete.studentCode.toLowerCase().includes(text) ||
       athlete.user.email.toLowerCase().includes(text)
     );
@@ -222,7 +221,7 @@ export default function AthletesPage() {
                     {filteredAthletes.map((athlete) => (
                       <tr key={athlete.id}>
                         <td className="font-medium">
-                          {athlete.firstName} {athlete.lastName}
+                          {athlete.user.fullName}
                         </td>
 
                         <td>{athlete.studentCode}</td>

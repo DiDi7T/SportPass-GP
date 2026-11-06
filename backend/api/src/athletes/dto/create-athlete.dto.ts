@@ -16,16 +16,6 @@ export class CreateAthleteDto {
   @MaxLength(30)
   studentCode!: string;
 
-  @IsString()
-  @MinLength(2)
-  @MaxLength(100)
-  firstName!: string;
-
-  @IsString()
-  @MinLength(2)
-  @MaxLength(100)
-  lastName!: string;
-
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

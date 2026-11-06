@@ -7,6 +7,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { IsNull, MoreThan, Repository } from 'typeorm';
 import { Session } from './entities/session.entity';
 import { User } from '../users/entities/user.entity';
+import { Athlete } from '../athletes/entities/athlete.entity';
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 const publicUser = (user: User) => ({
@@ -22,6 +23,7 @@ export class AuthService {
   private readonly dummyHash = bcrypt.hash('dummy-password-not-used-for-login', 12);
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(Athlete) private readonly athletes: Repository<Athlete>,
     @InjectRepository(Session) private readonly sessions: Repository<Session>,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
@@ -49,6 +51,12 @@ export class AuthService {
     const hash = user?.passwordHash ?? await this.dummyHash;
     const valid = await bcrypt.compare(password, hash).catch(() => false);
     if (!user || !user.isActive || !valid) throw new UnauthorizedException('Credenciales inválidas.');
+    const accessMessage = 'Tu cuenta institucional no está registrada en la lista oficial de deportistas ni entrenadores de SportPass. Contacta al administrador si consideras que es un error.';
+    if (!user.roles?.length) throw new UnauthorizedException(accessMessage);
+    if (user.roles.some((role) => role.name === 'athlete')) {
+      const athlete = await this.athletes.findOne({ where: { user: { id: user.id }, isActive: true } });
+      if (!athlete) throw new UnauthorizedException(accessMessage);
+    }
 
     const refreshToken = randomBytes(48).toString('base64url');
     const days = Number(this.config.get('REFRESH_TOKEN_DAYS', '14'));

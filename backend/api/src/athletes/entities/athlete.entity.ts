@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 
 import { User } from '../../users/entities/user.entity';
 import { TeamAthlete } from '../../team-athletes/entities/team-athlete.entity';
@@ -17,9 +18,9 @@ export class Athlete {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @OneToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
+  @OneToOne(() => User, (user) => user.athlete, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user!: Relation<User>;
 
   @Column({
     name: 'student_code',
@@ -28,12 +29,6 @@ export class Athlete {
     unique: true,
   })
   studentCode!: string;
-
-  @Column({ name: 'first_name', type: 'varchar', length: 100 })
-  firstName!: string;
-
-  @Column({ name: 'last_name', type: 'varchar', length: 100 })
-  lastName!: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

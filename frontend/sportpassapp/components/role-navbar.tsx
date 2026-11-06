@@ -16,13 +16,6 @@ export default function RoleNavbar({
   // Competencias: entrenadores y administradores.
   const managesCompetitions = role !== "athlete";
 
-  const placeholders =
-    role === "athlete"
-      ? ["Opción 2", "Opción 3"]
-      : role === "coach"
-        ? ["Opción 3"]
-        : [];
-
   const renderLinks = () => (
     <>
       <span className="role-menu-title">{roleNames[role]}</span>
@@ -76,11 +69,19 @@ export default function RoleNavbar({
         </>
       )}
 
-      {placeholders.map((label) => (
-        <span className="role-menu-placeholder" key={label}>
-          {label}
-        </span>
-      ))}
+      {role === "athlete" && (
+        <>
+          {/* HU5: competencias del deportista (requiere 70% de asistencia). */}
+          <Link className="role-menu-placeholder role-menu-link" href="/mis-competencias">Mis competencias</Link>
+          <Link className="role-menu-placeholder role-menu-link" href="/athlete#community">Opcion 3</Link>
+        </>
+      )}
+      {/* HU9: registro de asistencia a entrenamientos. */}
+      {role === "coach" && (
+        <Link className="role-menu-placeholder role-menu-link" href="/asistencia">
+          Asistencia
+        </Link>
+      )}
     </>
   );
 

@@ -11,6 +11,8 @@ import { TeamsModule } from './teams/teams.module';
 import { AthletesModule } from './athletes/athletes.module';
 import { TeamAthletesModule } from './team-athletes/team-athletes.module';
 import { RosterImportModule } from './roster-import/roster-import.module';
+import { TournamentsModule } from './tournaments/tournaments.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 
 @Module({
@@ -41,7 +43,8 @@ import { RosterImportModule } from './roster-import/roster-import.module';
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
-    AuthModule, UsersModule, RolesModule,TeamsModule,AthletesModule,TeamAthletesModule, RosterImportModule
+    AuthModule, UsersModule, RolesModule, TeamsModule, AthletesModule,
+    TeamAthletesModule, RosterImportModule, CompetitionsModule, TournamentsModule, AttendanceModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

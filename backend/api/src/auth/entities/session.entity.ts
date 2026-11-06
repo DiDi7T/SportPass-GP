@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('sessions')
@@ -12,5 +13,5 @@ export class Session {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
   @Column({ name: 'revoked_at', type: 'timestamptz', nullable: true }) revokedAt!: Date | null;
   @ManyToOne(() => User, user => user.sessions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' }) user!: User;
+  @JoinColumn({ name: 'user_id' }) user!: Relation<User>;
 }

@@ -103,12 +103,12 @@ export default function RoleHome({ role }: { role: Role }) {
           </div>
         </div>
         <div className="role-quick-links">
-          <article>
+          <article id={role === "athlete" ? "activities" : undefined}>
             <span>01</span>
             <h3>Actividades</h3>
             <p>Descubre opciones deportivas en el campus.</p>
           </article>
-          <article>
+          <article id={role === "athlete" ? "community" : undefined}>
             <span>02</span>
             <h3>Comunidad</h3>
             <p>Conecta con las personas que comparten tu interés.</p>
