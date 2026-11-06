@@ -308,6 +308,12 @@ export default function TeamsPage() {
                             >
                               Ver equipo
                             </Link>
+                            <Link
+                              href={`/admin/management/teams/${team.id}/coaches`}
+                              className="text-sm font-semibold text-blue-800 hover:underline"
+                            >
+                              Entrenadores
+                            </Link>
 
                             <Link
                               href={`/admin/management/teams/${team.id}/roster`}
@@ -370,6 +376,8 @@ export default function TeamsPage() {
                       >
                         Ver equipo
                       </Link>
+                      <Link href={`/admin/management/teams/${team.id}/coaches`}
+                        className="text-sm font-semibold text-blue-800">Entrenadores</Link>
 
                       <Link
                         href={`/admin/management/teams/${team.id}/roster`}

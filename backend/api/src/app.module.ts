@@ -8,6 +8,7 @@ import { CompetitionsModule } from './competitions/competitions.module';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
 import { TeamsModule } from './teams/teams.module';
+import { TeamCoachesModule } from './team-coaches/team-coaches.module';
 import { AthletesModule } from './athletes/athletes.module';
 import { TeamAthletesModule } from './team-athletes/team-athletes.module';
 import { RosterImportModule } from './roster-import/roster-import.module';
@@ -38,12 +39,12 @@ import { AttendanceModule } from './attendance/attendance.module';
         autoLoadEntities: true,
         // Para desarrollo: sincroniza entidades con PostgreSQL al iniciar Nest.
         // En producción debe volver a false y gestionarse el esquema con migraciones.
-        synchronize: true,
+        synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
         ssl: config.get('DB_SSL', 'true') !== 'false' ? { rejectUnauthorized: false } : false,
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
-    AuthModule, UsersModule, RolesModule, TeamsModule, AthletesModule,
+    AuthModule, UsersModule, RolesModule, TeamsModule, TeamCoachesModule, AthletesModule,
     TeamAthletesModule, RosterImportModule, CompetitionsModule, TournamentsModule, AttendanceModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

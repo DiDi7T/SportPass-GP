@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   apiUrl,
   dashboardPath,
@@ -76,9 +77,9 @@ export default function LoginPage() {
       <div className="login-card">
         <section className="login-visual">
           <img className="login-photo" src="/images/canchaT.jpg" alt="" />
-          <a className="login-logo" href="/">
+          <Link className="login-logo" href="/">
             <img src="/images/ICESI_logo.svg" alt="Universidad Icesi" />
-          </a>
+          </Link>
           <div className="login-visual-copy">
             <p>DEPORTE · COMUNIDAD · BIENESTAR</p>
             <h1>
@@ -93,13 +94,13 @@ export default function LoginPage() {
           </span>
         </section>
         <section className="login-main">
-          <a className="mobile-login-logo" href="/">
+          <Link className="mobile-login-logo" href="/">
             <img src="/images/ICESI_logo.svg" alt="Universidad Icesi" />
-          </a>
+          </Link>
           <div className="login-panel">
-            <a className="back-link" href="/">
+            <Link className="back-link" href="/">
               ← Volver al inicio
-            </a>
+            </Link>
             <div className="login-heading">
               <p className="eyebrow">SPORTPASS · UNIVERSIDAD ICESI</p>
               <h2>Inicia sesión</h2>

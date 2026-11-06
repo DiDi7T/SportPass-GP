@@ -4,9 +4,9 @@ export default function Home() {
   return (
     <main className="landing-page">
       <header className="topbar">
-        <a className="brand" href="/">
+        <Link className="brand" href="/">
           <img src="/images/ICESI_logo.svg" alt="Universidad Icesi" />
-        </a>
+        </Link>
         <nav className="landing-nav">
           <a href="#bienestar">SportPass</a>
           <Link className="header-login" href="/login">
