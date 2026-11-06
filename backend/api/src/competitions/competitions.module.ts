@@ -15,6 +15,9 @@ import { Competition } from './entities/competition.entity';
 import { CompetitionCallup } from './entities/competition-callup.entity';
 import { MyCompetitionsController } from './my-competitions.controller';
 import { MyCompetitionsService } from './my-competitions.service';
+import { TeamCoachesModule } from '../team-coaches/team-coaches.module';
+import { AcademicConflictsController } from './academic-conflicts.controller';
+import { AcademicConflictsService } from './academic-conflicts.service';
 
 @Module({
   imports: [
@@ -28,12 +31,14 @@ import { MyCompetitionsService } from './my-competitions.service';
     ]),
     AuthModule,
     AttendanceModule
+    TeamCoachesModule
   ],
-  controllers: [CompetitionsController,MyCompetitionsController],
+  controllers: [CompetitionsController,MyCompetitionsController,AcademicConflictsController],
   providers: [
     CompetitionsService,
     CompetitionCancellationEffects,
-    MyCompetitionsService
+    MyCompetitionsService,
+    AcademicConflictsService
   ],
 })
 export class CompetitionsModule {}

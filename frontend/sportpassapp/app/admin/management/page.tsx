@@ -4,12 +4,11 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/role-navbar";
+import { useRoleSession } from "@/lib/use-role-session";
 import {
   apiUrl,
-  getSession,
   roleNames,
   Role,
-  Session,
   SESSION_KEY,
 } from "@/lib/auth";
 
@@ -37,7 +36,7 @@ const sectionLabels: Record<Section, string> = {
 
 export default function AdminManagementPage() {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
+  const { session } = useRoleSession();
   const [section, setSection] = useState<Section>("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [roles, setRoles] = useState<AdminRole[]>([]);
@@ -92,9 +91,6 @@ export default function AdminManagementPage() {
   );
 
   const loadManagementData = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
       const [userData, roleData, permissionData] = await Promise.all([
         apiRequest("/admin/users") as Promise<AdminUser[]>,
@@ -106,6 +102,7 @@ export default function AdminManagementPage() {
       setRoles(roleData);
       setPermissions(permissionData);
       setSelectedRoleId((current) => current || roleData[0]?.id || "");
+      setSelectedCodes(roleData[0]?.permissions.map((permission) => permission.code) ?? []);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -117,34 +114,25 @@ export default function AdminManagementPage() {
     }
   }, [apiRequest]);
 
+  // useRoleSession observa la sesión sin copiarla a un estado dentro del efecto.
   useEffect(() => {
-    const currentSession = getSession();
-
-    if (!currentSession) {
-      router.replace("/login");
-      return;
-    }
-
-    if (!currentSession.user.roles.includes("admin")) {
+    if (session && !session.user.roles.includes("admin")) {
       router.replace("/");
-      return;
     }
-
-    setSession(currentSession);
-  }, [router]);
+  }, [session, router]);
 
   useEffect(() => {
-    if (session) void loadManagementData();
+    if (!session) return;
+    let active = true;
+    // Cargar datos de forma asincrona, sin actualizaciones sincronas en el efecto.
+    void Promise.resolve().then(() => {
+      if (active) return loadManagementData();
+    });
+    return () => { active = false; };
   }, [session, loadManagementData]);
 
   const selectedRole = roles.find((role) => role.id === selectedRoleId);
   const editingUser = users.find((user) => user.id === editingUserId);
-
-  useEffect(() => {
-    setSelectedCodes(
-      selectedRole?.permissions.map((permission) => permission.code) ?? [],
-    );
-  }, [selectedRole]);
 
   async function createRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -160,6 +148,7 @@ export default function AdminManagementPage() {
 
       setRoles((current) => [...current, { ...created, permissions: [] }]);
       setSelectedRoleId(created.id);
+      setSelectedCodes([]);
       setRoleName("");
       setRoleDescription("");
       setNotice("El rol se creó correctamente.");
@@ -219,6 +208,7 @@ export default function AdminManagementPage() {
 
       setRoles(remainingRoles);
       setSelectedRoleId(remainingRoles[0]?.id ?? "");
+      setSelectedCodes(remainingRoles[0]?.permissions.map((permission) => permission.code) ?? []);
       setConfirmRoleId("");
       setUsers((current) =>
         current.map((user) => ({
@@ -509,7 +499,10 @@ export default function AdminManagementPage() {
                       <button
                         className={selectedRoleId === role.id ? "selected" : ""}
                         key={role.id}
-                        onClick={() => setSelectedRoleId(role.id)}
+                        onClick={() => {
+                          setSelectedRoleId(role.id);
+                          setSelectedCodes(role.permissions.map((permission) => permission.code));
+                        }}
                       >
                         <span className="role-list-icon">◇</span>
                         <span>

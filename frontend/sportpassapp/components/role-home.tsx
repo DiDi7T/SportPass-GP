@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/role-navbar";
+import { useRoleSession } from "@/lib/use-role-session";
 import {
   apiUrl,
   dashboardPath,
-  getSession,
   Role,
   roleNames,
   SESSION_KEY,
-  Session,
 } from "@/lib/auth";
 
 const copy: Record<Role, { title: string; description: string; icon: string }> =
@@ -36,19 +35,12 @@ const copy: Record<Role, { title: string; description: string; icon: string }> =
 
 export default function RoleHome({ role }: { role: Role }) {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
+  const { session } = useRoleSession();
   useEffect(() => {
-    const saved = getSession();
-    if (!saved) {
-      router.replace("/login");
-      return;
+    if (session && !session.user.roles.includes(role)) {
+      router.replace(dashboardPath(session.user.roles[0] ?? "athlete"));
     }
-    if (!saved.user.roles.includes(role)) {
-      router.replace(dashboardPath(saved.user.roles[0] ?? "athlete"));
-      return;
-    }
-    setSession(saved);
-  }, [role, router]);
+  }, [session, role, router]);
 
   async function logout() {
     await fetch(`${apiUrl}/auth/logout`, {

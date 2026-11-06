@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import RoleNavbar from "@/components/role-navbar";
+import AcademicConflictsPanel from "@/components/academic-conflicts-panel";
 import { dashboardPath } from "@/lib/auth";
 import { TYPE_LABELS } from "@/lib/competitions";
 import {
@@ -169,6 +170,7 @@ export default function MyCompetitionsPage() {
                       <MatchStatusPill status={competition.status} />
                       <span className="match-type">{competition.team.sport} · {TYPE_LABELS[competition.type]}</span>
                     </span>
+                    <AcademicConflictsPanel competitionId={competition.id} />
                   </article>
                 </li>
               );

@@ -1,17 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 
 import { Team } from '../teams/entities/team.entity';
 import { Athlete } from '../athletes/entities/athlete.entity';
 import { TeamAthlete } from '../team-athletes/entities/team-athlete.entity';
+import { TeamCoachesService } from '../team-coaches/team-coaches.service';
 
 import { CompetitionCancellationEffects } from './competition-cancellation.effects';
 import {
@@ -51,9 +45,6 @@ const toInstant = (date: string, time: string) => new Date(`${date}T${time.slice
 const isAdmin = (actor: Actor) => (actor.roles ?? []).includes('admin');
 export const hasEnded = (competition: Pick<Competition, 'endDate' | 'endTime'>, now: Date) => toInstant(competition.endDate, competition.endTime) <= now;
 
-
-
-
 // HU7 CA4: solo el entrenador asignado puede cancelar.
 const canCancel = (
   competition: Competition,
@@ -69,7 +60,7 @@ export const acceptsPermissionRequests = (
   competition: Pick<Competition, 'status'>,
 ) => competition.status !== 'cancelada';
 
-const toResponse = (competition: Competition, actor: Actor) => ({
+const toResponse = (competition: Competition, actor: Actor, coachCanCancel = canCancel(competition, actor)) => ({
   id: competition.id,
   name: competition.name,
   team: competition.team
@@ -86,14 +77,9 @@ const toResponse = (competition: Competition, actor: Actor) => ({
   location: competition.location,
   type: competition.type,
   status: competition.status,
-  cancellation:
-    competition.status === 'cancelada'
-      ? {
-          reason: competition.cancellationReason,
-          cancelledAt: competition.cancelledAt,
-        }
-      : null,
-  canCancel: canCancel(competition, actor),
+  // HU7 CA3: la competencia cancelada conserva su motivo y fecha de cancelación.
+  cancellation: competition.status === 'cancelada' ? { reason: competition.cancellationReason, cancelledAt: competition.cancelledAt } : null,
+  canCancel: coachCanCancel,
   createdAt: competition.createdAt,
   updatedAt: competition.updatedAt,
 });
@@ -117,7 +103,18 @@ export class CompetitionsService {
 
     @InjectRepository(Athlete)
     private readonly athletes: Repository<Athlete>,
+
+    @Optional() private readonly teamCoaches?: TeamCoachesService,
   ) {}
+
+  private async coachHasAccess(teamId: string, actor: Actor, legacyCoachId?: string | null) {
+    return this.teamCoaches ? this.teamCoaches.canCoachAccess(teamId, actor.sub) : legacyCoachId === actor.sub;
+  }
+
+  private async canCoachCancel(competition: Competition, actor: Actor, now = new Date()) {
+    return competition.status !== 'cancelada' && !hasEnded(competition, now) &&
+      this.coachHasAccess(competition.teamId, actor, competition.team?.coach?.id);
+  }
 
   validateSchedule(schedule: Schedule, now = new Date()) {
     if (
@@ -143,71 +140,28 @@ export class CompetitionsService {
     }
   }
 
-  // El administrador ve todos los equipos activos;
-  // el entrenador solo los que tiene asignados.
-  findManagedTeams(actor: Actor) {
+  // El administrador ve todos los equipos activos; un entrenador solo los que tiene asignados.
+  async findManagedTeams(actor: Actor) {
+    const teamIds = !isAdmin(actor) && this.teamCoaches ? await this.teamCoaches.managedTeamIds(actor.sub) : null;
+    if (teamIds && !teamIds.length) return [];
     return this.teams.find({
-      where: isAdmin(actor)
-        ? { isActive: true }
-        : { isActive: true, coach: { id: actor.sub } },
-      select: {
-        id: true,
-        name: true,
-        sport: true,
-      },
-      order: {
-        name: 'ASC',
-      },
+      where: isAdmin(actor) ? { isActive: true } : (teamIds ? { isActive: true, id: In(teamIds) } : { isActive: true, coach: { id: actor.sub } }),
+      select: { id: true, name: true, sport: true },
+      order: { name: 'ASC' },
     });
   }
 
   private async findManageableTeam(teamId: string, actor: Actor) {
-    const team = await this.teams.findOne({
-      where: {
-        id: teamId,
-        isActive: true,
-      },
-      relations: {
-        coach: true,
-      },
-    });
-
-    if (!team) {
-      throw new NotFoundException('Equipo no encontrado.');
-    }
-
-    if (!isAdmin(actor) && team.coach?.id !== actor.sub) {
-      throw new ForbiddenException(
-        'No eres el entrenador de este equipo.',
-      );
-    }
-
+    const team = await this.teams.findOne({ where: { id: teamId, isActive: true }, relations: { coach: true } });
+    if (!team) throw new NotFoundException('Equipo no encontrado.');
+    if (!isAdmin(actor) && !(await this.coachHasAccess(team.id, actor, team.coach?.id))) throw new ForbiddenException('No eres entrenador de este equipo.');
     return team;
   }
 
   private async findManageable(id: string, actor: Actor) {
-    const competition = await this.competitions.findOne({
-      where: { id },
-      relations: {
-        team: {
-          coach: true,
-        },
-      },
-    });
-
-    if (!competition) {
-      throw new NotFoundException('Competencia no encontrada.');
-    }
-
-    if (
-      !isAdmin(actor) &&
-      competition.team.coach?.id !== actor.sub
-    ) {
-      throw new ForbiddenException(
-        'No tienes permiso para gestionar esta competencia.',
-      );
-    }
-
+    const competition = await this.competitions.findOne({ where: { id }, relations: { team: { coach: true } } });
+    if (!competition) throw new NotFoundException('Competencia no encontrada.');
+    if (!isAdmin(actor) && !(await this.coachHasAccess(competition.team.id, actor, competition.team.coach?.id))) throw new ForbiddenException('No tienes permiso para gestionar esta competencia.');
     return competition;
   }
 
@@ -248,26 +202,19 @@ export class CompetitionsService {
       .addOrderBy('competition.startTime', 'ASC');
 
     if (!isAdmin(actor)) {
-      query.andWhere('coach.id = :coachId', {
-        coachId: actor.sub,
-      });
+      if (this.teamCoaches) {
+        const teamIds = await this.teamCoaches.managedTeamIds(actor.sub);
+        if (!teamIds.length) return [];
+        query.andWhere('team.id IN (:...teamIds)', { teamIds });
+      } else query.andWhere('coach.id = :coachId', { coachId: actor.sub });
     }
-
-    if (teamId) {
-      query.andWhere('team.id = :teamId', { teamId });
-    }
-
-    const competitions = await query.getMany();
-
-    return competitions.map((competition) =>
-      toResponse(competition, actor),
-    );
+    if (teamId) query.andWhere('team.id = :teamId', { teamId });
+    return Promise.all((await query.getMany()).map(async competition => toResponse(competition, actor, await this.canCoachCancel(competition, actor))));
   }
 
   async findOne(id: string, actor: Actor) {
     const competition = await this.findManageable(id, actor);
-
-    return toResponse(competition, actor);
+    return toResponse(competition, actor, await this.canCoachCancel(competition, actor));
   }
 
   async update(
@@ -318,85 +265,24 @@ export class CompetitionsService {
     return this.findOne(id, actor);
   }
 
-  // HU7: cancelar conserva la competencia y registra el motivo.
-  async cancel(
-    id: string,
-    dto: CancelCompetitionDto,
-    actor: Actor,
-    now = new Date(),
-  ) {
-    const competition = await this.competitions.findOne({
-      where: { id },
-      relations: {
-        team: {
-          coach: true,
-        },
-      },
-    });
-
-    if (!competition) {
-      throw new NotFoundException('Competencia no encontrada.');
-    }
-
-    if (competition.team.coach?.id !== actor.sub) {
-      throw new ForbiddenException(
-        'Solo el entrenador del equipo puede cancelar esta competencia.',
-      );
-    }
-
-    if (competition.status === 'cancelada') {
-      throw new ConflictException(
-        'La competencia ya está cancelada.',
-      );
-    }
-
-    if (hasEnded(competition, now)) {
-      throw new BadRequestException(
-        'No se puede cancelar una competencia que ya finalizó.',
-      );
-    }
-
+  // HU7: cancelar no borra la competencia. Queda "cancelada" con su motivo, quién la canceló y cuándo.
+  async cancel(id: string, dto: CancelCompetitionDto, actor: Actor, now = new Date()) {
+    const competition = await this.competitions.findOne({ where: { id }, relations: { team: { coach: true } } });
+    if (!competition) throw new NotFoundException('Competencia no encontrada.');
+    if (!(await this.coachHasAccess(competition.team.id, actor, competition.team.coach?.id))) throw new ForbiddenException('Solo un entrenador asignado al equipo puede cancelar esta competencia.');
+    if (competition.status === 'cancelada') throw new ConflictException('La competencia ya está cancelada.');
+    if (hasEnded(competition, now)) throw new BadRequestException('No se puede cancelar una competencia que ya finalizó.');
     const reason = dto.reason?.trim();
+    if (!reason) throw new BadRequestException(CANCELLATION_REASON_REQUIRED);
 
-    if (!reason) {
-      throw new BadRequestException(
-        CANCELLATION_REASON_REQUIRED,
-      );
-    }
-
-    const cancellation = {
-      status: 'cancelada' as const,
-      cancellationReason: reason,
-      cancelledById: actor.sub,
-      cancelledAt: now,
-    };
-
-    const cancelled = {
-      ...competition,
-      ...cancellation,
-    };
-
-    const annulledRequests =
-      await this.competitions.manager.transaction(
-        async (manager) => {
-          const { affected } = await manager.update(
-            Competition,
-            { id, status: Not('cancelada') },
-            cancellation,
-          );
-
-          if (!affected) {
-            throw new ConflictException(
-              'La competencia ya está cancelada.',
-            );
-          }
-
-          return this.cancellationEffects.annulPermissionRequests(
-            cancelled,
-            manager,
-          );
-        },
-      );
+    const cancellation = { status: 'cancelada' as const, cancellationReason: reason, cancelledById: actor.sub, cancelledAt: now };
+    const cancelled = { ...competition, ...cancellation };
+    const annulledRequests = await this.competitions.manager.transaction(async manager => {
+      // La condición sobre el estado evita cancelar dos veces si llegan dos peticiones a la vez.
+      const { affected } = await manager.update(Competition, { id, status: Not('cancelada') }, cancellation);
+      if (!affected) throw new ConflictException('La competencia ya está cancelada.');
+      return this.cancellationEffects.annulPermissionRequests(cancelled, manager);
+    });
 
     await this.cancellationEffects.notifyCancellation(
       cancelled,
@@ -408,57 +294,57 @@ export class CompetitionsService {
 
   // Consultar integrantes activos y su estado de convocatoria.
   async findCallup(id: string, actor: Actor) {
-  const competition = await this.findManageable(id, actor);
+    const competition = await this.findManageable(id, actor);
 
-  const [members, callups] = await Promise.all([
-    this.teamAthletes.find({
-      where: {
-        team: { id: competition.teamId },
-        active: true,
-        athlete: {
-          isActive: true,
-          user: {
+    const [members, callups] = await Promise.all([
+      this.teamAthletes.find({
+        where: {
+          team: { id: competition.teamId },
+          active: true,
+          athlete: {
             isActive: true,
+            user: {
+              isActive: true,
+            },
           },
         },
-      },
-      relations: {
-        athlete: {
-          user: true,
+        relations: {
+          athlete: {
+            user: true,
+          },
         },
-      },
-      order: {
-        createdAt: 'ASC',
-      },
-    }),
+        order: {
+          createdAt: 'ASC',
+        },
+      }),
 
-    this.callups.find({
-      where: {
-        competition: { id },
-      },
-      relations: {
-        athlete: true,
-      },
-    }),
-  ]);
+      this.callups.find({
+        where: {
+          competition: { id },
+        },
+        relations: {
+          athlete: true,
+        },
+      }),
+    ]);
 
-  const calledUpIds = new Set(
-    callups.map((callup) => callup.athlete.id),
-  );
+    const calledUpIds = new Set(
+      callups.map((callup) => callup.athlete.id),
+    );
 
-  return {
-    competitionId: competition.id,
-    competitionName: competition.name,
-    teamId: competition.teamId,
-    athletes: members.map((member) => ({
-      id: member.athlete.id,
-      fullName: member.athlete.user.fullName,
-      studentCode: member.athlete.studentCode,
-      email: member.athlete.user.email,
-      calledUp: calledUpIds.has(member.athlete.id),
-    })),
-  };
-}
+    return {
+      competitionId: competition.id,
+      competitionName: competition.name,
+      teamId: competition.teamId,
+      athletes: members.map((member) => ({
+        id: member.athlete.id,
+        fullName: member.athlete.user.fullName,
+        studentCode: member.athlete.studentCode,
+        email: member.athlete.user.email,
+        calledUp: calledUpIds.has(member.athlete.id),
+      })),
+    };
+  }
 
   // Guardar la selección completa de convocados.
   async saveCallup(
@@ -468,8 +354,8 @@ export class CompetitionsService {
   ) {
     const competition = await this.findManageable(id, actor);
 
-    // Solo el entrenador asignado puede modificar la convocatoria.
-    if (competition.team.coach?.id !== actor.sub) {
+    // Validar acceso con coachHasAccess en lugar de únicamente la propiedad de coach único
+    if (!isAdmin(actor) && !(await this.coachHasAccess(competition.team.id, actor, competition.team.coach?.id))) {
       throw new ForbiddenException(
         'Solo el entrenador asignado puede gestionar la convocatoria.',
       );

@@ -1,8 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
 import { Athlete } from '../athletes/entities/athlete.entity';
 import { Team } from '../teams/entities/team.entity';
+import { TeamCoachesService } from '../team-coaches/team-coaches.service';
 import { isValidDocumentNumber, normalizeDocumentNumber } from '../users/document-number';
 import { User } from '../users/entities/user.entity';
 import { Attendance } from './entities/attendance.entity';
@@ -40,12 +41,15 @@ export class AttendanceRegistrationService {
     @InjectRepository(Athlete) private readonly athletes: Repository<Athlete>,
     @InjectRepository(Participant) private readonly participants: Repository<Participant>,
     @InjectRepository(Attendance) private readonly attendances: Repository<Attendance>,
+    @Optional() private readonly teamCoaches?: TeamCoachesService,
   ) {}
 
   // Deportes en los que el entrenador tiene al menos un equipo activo.
   async findMySports(actor: Actor) {
+    const assignedIds = this.teamCoaches ? await this.teamCoaches.managedTeamIds(actor.sub) : null;
+    if (assignedIds && !assignedIds.length) return [];
     const teams = await this.teams.find({
-      where: { coach: { id: actor.sub }, isActive: true },
+      where: assignedIds ? { id: In(assignedIds), isActive: true } : { coach: { id: actor.sub }, isActive: true },
       relations: { sportRecord: true },
     });
     const sports = new Map<string, { id: string; name: string }>();
@@ -100,7 +104,9 @@ export class AttendanceRegistrationService {
   }
 
   private async assertCoachOfSport(actor: Actor, sportId: string) {
-    const coachesSport = await this.teams.exists({ where: { coach: { id: actor.sub }, isActive: true, sportId } });
+    const assignedIds = this.teamCoaches ? await this.teamCoaches.managedTeamIds(actor.sub) : null;
+    const coachesSport = assignedIds ? assignedIds.length > 0 && await this.teams.exists({ where: { id: In(assignedIds), isActive: true, sportId } })
+      : await this.teams.exists({ where: { coach: { id: actor.sub }, isActive: true, sportId } });
     if (!coachesSport) throw new ForbiddenException(NOT_COACH_OF_SPORT);
   }
 
