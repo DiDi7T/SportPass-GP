@@ -30,8 +30,8 @@ import { AcademicConflictsService } from './academic-conflicts.service';
       Session,
     ]),
     AuthModule,
-    AttendanceModule
-    TeamCoachesModule
+    AttendanceModule,
+    TeamCoachesModule,
   ],
   controllers: [CompetitionsController,MyCompetitionsController,AcademicConflictsController],
   providers: [
