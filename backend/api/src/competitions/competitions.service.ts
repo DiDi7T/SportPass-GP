@@ -22,7 +22,7 @@ const isRealDate = (value: string) => {
 };
 const toInstant = (date: string, time: string) => new Date(`${date}T${time.slice(0, 5)}:00${BOGOTA_OFFSET}`);
 const isAdmin = (actor: Actor) => (actor.roles ?? []).includes('admin');
-const hasEnded = (competition: Competition, now: Date) => toInstant(competition.endDate, competition.endTime) <= now;
+export const hasEnded = (competition: Pick<Competition, 'endDate' | 'endTime'>, now: Date) => toInstant(competition.endDate, competition.endTime) <= now;
 
 // HU7 CA4: solo el entrenador asignado al equipo cancela (ni siquiera el administrador),
 // y solo mientras la competencia no esté cancelada ni haya terminado.

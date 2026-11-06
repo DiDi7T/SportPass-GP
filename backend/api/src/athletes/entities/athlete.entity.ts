@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 
 import { User } from '../../users/entities/user.entity';
 import { TeamAthlete } from '../../team-athletes/entities/team-athlete.entity';
@@ -19,7 +20,7 @@ export class Athlete {
 
   @OneToOne(() => User, (user) => user.athlete, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user!: Relation<User>;
 
   @Column({
     name: 'student_code',

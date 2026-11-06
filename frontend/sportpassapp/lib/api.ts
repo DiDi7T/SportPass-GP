@@ -5,7 +5,8 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001
 const TOKEN_KEY = "sportpass_access_token";
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  // `body` conserva la respuesta de error del backend (p. ej. HU5: el % de asistencia en el 403).
+  constructor(message: string, readonly status: number, readonly body: unknown = null) {
     super(message);
   }
 }
@@ -31,8 +32,7 @@ export function setToken(token: string | null) {
   }
 }
 
-async function errorMessage(response: Response) {
-  const body = await response.json().catch(() => null);
+function errorMessage(body: { message?: unknown } | null) {
   const message = body?.message;
   if (Array.isArray(message)) return [...new Set(message)].join(" ");
   return typeof message === "string" ? message : "Ocurrió un error inesperado.";
@@ -71,7 +71,8 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
   if (response.status === 401 && retry && (await refreshAccessToken())) return apiFetch<T>(path, init, false);
   if (!response.ok) {
     if (response.status === 401) setToken(null);
-    throw new ApiError(await errorMessage(response), response.status);
+    const body = await response.json().catch(() => null);
+    throw new ApiError(errorMessage(body), response.status, body);
   }
   return response.json() as Promise<T>;
 }

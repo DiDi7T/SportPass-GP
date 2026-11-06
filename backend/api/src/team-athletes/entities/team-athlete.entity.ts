@@ -7,6 +7,7 @@ import {
   Unique,
   Column,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 
 import { Team } from '../../teams/entities/team.entity';
 import { Athlete } from '../../athletes/entities/athlete.entity';
@@ -22,14 +23,14 @@ export class TeamAthlete {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'team_id' })
-  team!: Team;
+  team!: Relation<Team>;
 
   @ManyToOne(() => Athlete, (athlete) => athlete.teamAthletes, {
     nullable: false,
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'athlete_id' })
-  athlete!: Athlete;
+  athlete!: Relation<Athlete>;
 
   @Column({ type: 'boolean', default: true })
   active!: boolean;

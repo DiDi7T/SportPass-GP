@@ -61,7 +61,8 @@ export default function RoleNavbar({
 
       {role === "athlete" && (
         <>
-          <Link className="role-menu-placeholder role-menu-link" href="/athlete#activities">Opcion 2</Link>
+          {/* HU5: competencias del deportista (requiere 70% de asistencia). */}
+          <Link className="role-menu-placeholder role-menu-link" href="/mis-competencias">Mis competencias</Link>
           <Link className="role-menu-placeholder role-menu-link" href="/athlete#community">Opcion 3</Link>
         </>
       )}

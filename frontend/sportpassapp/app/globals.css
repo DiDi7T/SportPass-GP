@@ -2138,3 +2138,107 @@ button {
     @apply inline-flex items-center justify-center rounded-[10px] border border-[#f0cccc] px-4 py-2 text-sm font-bold text-[#9a2929] transition-colors hover:bg-[#fff2f2];
   }
 }
+
+/* Mis competencias (HU5): tarjetas sin enlace y aviso de asistencia (CA3) en tono motivador. */
+.my-competition-card:hover {
+  background: #fff;
+  transform: none;
+}
+.my-competitions-empty {
+  margin-top: 8px;
+}
+.attendance-block {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 18px;
+  max-width: 720px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--lavender);
+}
+.attendance-block-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--icesi);
+  font-size: 20px;
+  font-weight: 700;
+}
+.attendance-block h2 {
+  margin: 4px 0 6px;
+  font-size: clamp(18px, 2vw, 21px);
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+}
+.attendance-block-message {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.attendance-meter {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e2f6;
+}
+.attendance-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--icesi);
+}
+.attendance-meter > i {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--green);
+}
+.attendance-meter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.attendance-meter-legend strong {
+  color: var(--ink);
+}
+.attendance-sports {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.attendance-hint {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.attendance-note {
+  max-width: 720px;
+  margin: 0 0 16px;
+  padding: 12px 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--lavender);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (max-width: 760px) {
+  .attendance-block {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 18px 16px;
+  }
+}

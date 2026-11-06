@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 
 import { User } from '../../users/entities/user.entity';
 import { TeamAthlete } from '../../team-athletes/entities/team-athlete.entity';
@@ -38,11 +39,11 @@ export class Team {
 
   @ManyToOne(() => Sport, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'sport_id', foreignKeyConstraintName: 'fk_teams_sport' })
-  sportRecord!: Sport | null;
+  sportRecord!: Relation<Sport> | null;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'coach_id' })
-  coach!: User | null;
+  coach!: Relation<User> | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
