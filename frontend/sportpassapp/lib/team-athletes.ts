@@ -11,8 +11,6 @@ export type AthleteUser = {
 export type Athlete = {
   id: string;
   studentCode: string;
-  firstName: string;
-  lastName: string;
   isActive: boolean;
   user: AthleteUser;
 };

@@ -1251,6 +1251,12 @@ button {
   }
 }
 
+/* La regla global de dashboards aumenta los eyebrow a 16px; en la nómina
+   deben conservar su jerarquía de etiqueta pequeña. */
+.coach-roster-page .eyebrow {
+  font-size: 10px;
+}
+
 .user-role-editor strong {
   font-size: 12px;
 }

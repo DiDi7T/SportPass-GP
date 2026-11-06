@@ -137,8 +137,7 @@ export default function TeamRosterContent({
     if (!term) return available;
 
     return available.filter((athlete) => {
-      const fullName =
-        `${athlete.firstName} ${athlete.lastName}`.toLowerCase();
+      const fullName = athlete.user.fullName.toLowerCase();
 
       return (
         fullName.includes(term) ||
@@ -174,8 +173,7 @@ export default function TeamRosterContent({
   }
 
   async function handleRemove(assignment: TeamAthlete) {
-    const athleteName =
-      `${assignment.athlete.firstName} ${assignment.athlete.lastName}`;
+    const athleteName = assignment.athlete.user.fullName;
 
     const confirmed = window.confirm(
       `¿Estás seguro de retirar a ${athleteName} de este equipo?`
@@ -297,7 +295,7 @@ export default function TeamRosterContent({
                           <tr key={assignment.id}>
                             <td>
                               <strong>
-                                {athlete.user.fullName} {athlete.lastName}
+                                {athlete.user.fullName}
                               </strong>
                             </td>
 
@@ -381,9 +379,7 @@ export default function TeamRosterContent({
                       </div>
 
                       <div className="roster-athlete-info">
-                        <h3>
-                          {athlete.user.fullName}
-                        </h3>
+                        <h3>{athlete.user.fullName}</h3>
 
                         <p>{athlete.studentCode}</p>
                         <p>{athlete.user.email}</p>
