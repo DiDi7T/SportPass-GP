@@ -25,6 +25,16 @@ export default function RoleNavbar({
         Torneos
       </Link>
 
+      {/* Exclusivo para entrenadores */}
+      {role === "coach" && (
+        <Link
+          className="role-menu-placeholder role-menu-link"
+          href="/coach/teams"
+        >
+          Mis equipos
+        </Link>
+      )}
+
       {/* Entrenadores y administradores */}
       {managesCompetitions && (
         <Link
@@ -63,7 +73,6 @@ export default function RoleNavbar({
         <>
           {/* HU5: competencias del deportista (requiere 70% de asistencia). */}
           <Link className="role-menu-placeholder role-menu-link" href="/mis-competencias">Mis competencias</Link>
-          <Link className="role-menu-placeholder role-menu-link" href="/athlete#community">Opcion 3</Link>
         </>
       )}
       {/* HU9: registro de asistencia a entrenamientos. */}

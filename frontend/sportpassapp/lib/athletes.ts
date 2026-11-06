@@ -7,6 +7,7 @@ export type Athlete = {
   user: {
     id: string;
     email: string;
+    fullName: string;
   };
   createdAt: string;
 };
