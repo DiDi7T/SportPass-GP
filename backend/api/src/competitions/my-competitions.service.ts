@@ -53,10 +53,7 @@ export class MyCompetitionsService {
     private readonly attendance: AttendanceService,
   ) {}
 
-  // HU5: competencias de los equipos del deportista, solo de los deportes donde cumple el 70%.
-  // - No cumple en ningún deporte → 403 ATTENDANCE_BELOW_MINIMUM con su % (CA3).
-  // - Cumple en algunos → 200 con esas competencias y `blockedSports` con los demás.
-  // - Sin competencias próximas → 200 con lista vacía (CA2).
+  
   async findMine(userId: string, now = new Date()) {
     const athlete = await this.athletes.findOne({ where: { user: { id: userId }, isActive: true } });
     if (!athlete) {
@@ -93,7 +90,7 @@ export class MyCompetitionsService {
   }
 
   // Agrupa los equipos por deporte y calcula la asistencia una vez por deporte.
-  // El deporte se toma de teams.sport_id; si viniera vacío se busca por nombre (teams.sport).
+  // El deporte se toma de teams.sport_id
   private async evaluateSports(athleteId: string, teams: Team[]): Promise<SportStatus[]> {
     const groups = new Map<string, { sportId: string | null; sport: string; teamIds: string[] }>();
     for (const team of teams) {
@@ -110,8 +107,8 @@ export class MyCompetitionsService {
     })));
   }
 
-  // Próximas o en curso, no canceladas, ordenadas por fecha. Las "aplazadas" se muestran con su estado.
-  private async findUpcoming(teamIds: string[], now: Date) {
+//mostramos por su estado
+ private async findUpcoming(teamIds: string[], now: Date) {
     if (teamIds.length === 0) return [];
     const competitions = await this.competitions.find({
       where: { teamId: In(teamIds), status: Not('cancelada'), endDate: MoreThanOrEqual(bogotaToday(now)) },

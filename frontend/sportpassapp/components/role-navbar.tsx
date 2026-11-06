@@ -66,7 +66,12 @@ export default function RoleNavbar({
           <Link className="role-menu-placeholder role-menu-link" href="/athlete#community">Opcion 3</Link>
         </>
       )}
-      {role === "coach" && <span className="role-menu-placeholder">Opciones próximamente</span>}
+      {/* HU9: registro de asistencia a entrenamientos. */}
+      {role === "coach" && (
+        <Link className="role-menu-placeholder role-menu-link" href="/asistencia">
+          Asistencia
+        </Link>
+      )}
     </>
   );
 
