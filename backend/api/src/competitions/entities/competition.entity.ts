@@ -1,4 +1,5 @@
 import { Check, Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Team } from '../../teams/entities/team.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -35,11 +36,11 @@ export class Competition {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' }) updatedAt!: Date;
 
   @ManyToOne(() => Team, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'team_id' }) team!: Team;
+  @JoinColumn({ name: 'team_id' }) team!: Relation<Team>;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'created_by' }) createdBy!: User;
+  @JoinColumn({ name: 'created_by' }) createdBy!: Relation<User>;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'cancelled_by' }) cancelledBy!: User | null;
+  @JoinColumn({ name: 'cancelled_by' }) cancelledBy!: Relation<User> | null;
 }

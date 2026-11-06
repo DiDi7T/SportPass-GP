@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Participant } from './participant.entity';
 
 // Una fila = el participante asistió al entrenamiento de su deporte ese día.
@@ -13,5 +14,5 @@ export class Attendance {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
 
   @ManyToOne(() => Participant, participant => participant.attendances, { nullable: false })
-  @JoinColumn({ name: 'participant_id', foreignKeyConstraintName: 'fk_asistencia_participante' }) participant!: Participant;
+  @JoinColumn({ name: 'participant_id', foreignKeyConstraintName: 'fk_asistencia_participante' }) participant!: Relation<Participant>;
 }

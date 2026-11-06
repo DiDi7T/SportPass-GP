@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Athlete } from '../../athletes/entities/athlete.entity';
 import { Sport } from '../../sports/entities/sport.entity';
 import { Attendance } from './attendance.entity';
@@ -14,10 +15,10 @@ export class Participant {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
 
   @ManyToOne(() => Athlete, { nullable: false })
-  @JoinColumn({ name: 'athlete_id', foreignKeyConstraintName: 'fk_participante_athlete' }) athlete!: Athlete;
+  @JoinColumn({ name: 'athlete_id', foreignKeyConstraintName: 'fk_participante_athlete' }) athlete!: Relation<Athlete>;
 
   @ManyToOne(() => Sport, sport => sport.participants, { nullable: false })
-  @JoinColumn({ name: 'sport_id', foreignKeyConstraintName: 'fk_participante_deporte' }) sport!: Sport;
+  @JoinColumn({ name: 'sport_id', foreignKeyConstraintName: 'fk_participante_deporte' }) sport!: Relation<Sport>;
 
   @OneToMany(() => Attendance, attendance => attendance.participant) attendances!: Attendance[];
 }

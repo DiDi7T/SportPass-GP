@@ -1,4 +1,5 @@
 import { Check, Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn,OneToOne } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
 import { Session } from '../../auth/entities/session.entity';
 import { Athlete } from '../../athletes/entities/athlete.entity';
@@ -22,5 +23,5 @@ export class User {
   @OneToMany(() => Session, session => session.user) sessions!: Session[];
 
   @OneToOne(() => Athlete, (athlete) => athlete.user, { nullable: true })
-  athlete!: Athlete | null;
+  athlete!: Relation<Athlete> | null;
 }
