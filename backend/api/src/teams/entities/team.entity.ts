@@ -11,6 +11,7 @@ import {
 
 import { User } from '../../users/entities/user.entity';
 import { TeamAthlete } from '../../team-athletes/entities/team-athlete.entity';
+import { Sport } from '../../sports/entities/sport.entity';
 
 
 // Copia de la entidad Team de la rama feat/load-athletes (HU2), sin la relación
@@ -27,6 +28,17 @@ export class Team {
 
   @Column({ type: 'varchar' })
   sport!: string;
+
+  // HU5/HU9: FK al catálogo `sports` (participantes y asistencia van por deporte).
+  // `sport` (texto) se mantiene para no romper lo existente; el trigger
+  // `trg_teams_sport_id` de la BD llena sport_id a partir de `sport` al crear o editar
+  // un equipo, por eso TypeORM nunca escribe esta columna (insert/update: false).
+  @Column({ name: 'sport_id', type: 'uuid', nullable: true, insert: false, update: false })
+  sportId!: string | null;
+
+  @ManyToOne(() => Sport, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'sport_id', foreignKeyConstraintName: 'fk_teams_sport' })
+  sportRecord!: Sport | null;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'coach_id' })
