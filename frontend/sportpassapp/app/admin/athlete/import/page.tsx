@@ -57,9 +57,9 @@ export default function ImportAthletesPage() {
 
   function downloadTemplate() {
     const content = [
-      "email,student_code",
-      "estudiante1@icesi.edu.co,202612345",
-      "estudiante2@icesi.edu.co,202612346",
+      "email,student_code,document_number",
+      "estudiante1@icesi.edu.co,202612345,1107012345",
+      "estudiante2@icesi.edu.co,202612346,1107012346",
     ].join("\n");
 
     const blob = new Blob(
@@ -180,6 +180,10 @@ export default function ImportAthletesPage() {
                     <tr>
                       <td>student_code</td>
                       <td>Código estudiantil</td>
+                    </tr>
+                    <tr>
+                      <td>document_number</td>
+                      <td>Cédula o documento de identidad (con la que el entrenador registra la asistencia)</td>
                     </tr>
                   </tbody>
                 </table>

@@ -1,14 +1,24 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Athlete } from '../athletes/entities/athlete.entity';
+import { AuthModule } from '../auth/auth.module';
+import { Session } from '../auth/entities/session.entity';
 import { Sport } from '../sports/entities/sport.entity';
+import { Team } from '../teams/entities/team.entity';
+import { User } from '../users/entities/user.entity';
+import { AttendanceRegistrationService } from './attendance-registration.service';
+import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
 import { Attendance } from './entities/attendance.entity';
 import { Participant } from './entities/participant.entity';
 
-// Tablas de asistencia (HU5 / HU9). AttendanceService calcula el % de asistencia por deporte.
+// Asistencia a entrenamientos.
+// - AttendanceService: % de asistencia por deporte (HU5).
+// - AttendanceRegistrationService + AttendanceController: registro por el entrenador (HU9).
 @Module({
-  imports: [TypeOrmModule.forFeature([Sport, Participant, Attendance])],
-  providers: [AttendanceService],
+  imports: [TypeOrmModule.forFeature([Sport, Participant, Attendance, Team, User, Athlete, Session]), AuthModule],
+  controllers: [AttendanceController],
+  providers: [AttendanceService, AttendanceRegistrationService],
   exports: [TypeOrmModule, AttendanceService],
 })
 export class AttendanceModule {}

@@ -5,10 +5,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { parse } from 'csv-parse/sync';
 
 import { User } from '../users/entities/user.entity';
+import {
+  INVALID_DOCUMENT_NUMBER,
+  isValidDocumentNumber,
+  normalizeDocumentNumber,
+} from '../users/document-number';
 import { Team } from '../teams/entities/team.entity';
 import { Athlete } from '../athletes/entities/athlete.entity';
 import { TeamAthlete } from '../team-athletes/entities/team-athlete.entity';
@@ -18,7 +23,15 @@ import type { AthleteImportResult } from './interfaces/athlete-import-result.int
 interface RosterRow {
   email: string;
   student_code: string;
+  // HU9: cédula con la que el entrenador registra la asistencia.
+  // Obligatoria en la lista oficial; opcional en la importación por equipo.
+  document_number?: string;
 }
+
+// Lista oficial de deportistas (HU2 + HU9): la cédula es obligatoria.
+const OFFICIAL_LIST_HEADERS = ['email', 'student_code', 'document_number'];
+// Importación a un equipo: se mantiene el formato original; la cédula es opcional.
+const TEAM_ROSTER_HEADERS = ['email', 'student_code'];
 
 export interface RosterImportResult {
   teamId: string;
@@ -47,7 +60,7 @@ export class RosterImportService {
   async importAthletes(
     file: Express.Multer.File,
   ): Promise<AthleteImportResult> {
-    const rows = this.parseCsv(file);
+    const rows = this.parseCsv(file, OFFICIAL_LIST_HEADERS);
 
     const result: AthleteImportResult = {
       totalRows: rows.length,
@@ -58,6 +71,7 @@ export class RosterImportService {
 
     const processedEmails = new Set<string>();
     const processedCodes = new Set<string>();
+    const processedDocuments = new Set<string>();
 
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index];
@@ -68,9 +82,18 @@ export class RosterImportService {
         .toLowerCase();
 
       const studentCode = String(row.student_code ?? '').trim();
+      const documentNumber = normalizeDocumentNumber(row.document_number);
 
       try {
-        this.validateRow(row);
+        this.validateRow(row, true);
+
+        if (processedDocuments.has(documentNumber)) {
+          throw new Error(
+            'El documento de identidad está duplicado dentro del archivo CSV.',
+          );
+        }
+
+        processedDocuments.add(documentNumber);
 
         if (processedEmails.has(email)) {
           throw new Error(
@@ -151,6 +174,12 @@ export class RosterImportService {
         );
       }
 
+      await this.assignDocumentNumber(
+        userRepository,
+        user,
+        normalizeDocumentNumber(row.document_number),
+      );
+
       let athlete = athleteByUser;
 
       if (!athlete) {
@@ -168,6 +197,29 @@ export class RosterImportService {
     });
   }
 
+  // HU9: guarda la cédula en users.document_number. La lista oficial es la fuente de
+  // verdad, así que reemplaza la anterior; no puede repetirse entre dos usuarios.
+  private async assignDocumentNumber(
+    userRepository: Repository<User>,
+    user: User,
+    documentNumber: string,
+  ): Promise<void> {
+    if (!documentNumber || user.documentNumber === documentNumber) return;
+
+    const owner = await userRepository.findOne({
+      where: { documentNumber },
+    });
+
+    if (owner && owner.id !== user.id) {
+      throw new Error(
+        'El documento de identidad ya está asociado a otro usuario.',
+      );
+    }
+
+    await userRepository.update({ id: user.id }, { documentNumber });
+    user.documentNumber = documentNumber;
+  }
+
   // =====================================================
   // IMPORTACIÓN DE DEPORTISTAS A UN EQUIPO
   // =====================================================
@@ -176,7 +228,7 @@ export class RosterImportService {
     teamId: string,
     file: Express.Multer.File,
   ): Promise<RosterImportResult> {
-    const rows = this.parseCsv(file);
+    const rows = this.parseCsv(file, TEAM_ROSTER_HEADERS);
 
     const teamRepository = this.dataSource.getRepository(Team);
 
@@ -307,6 +359,12 @@ export class RosterImportService {
         );
       }
 
+      await this.assignDocumentNumber(
+        userRepository,
+        user,
+        normalizeDocumentNumber(row.document_number),
+      );
+
       let athlete = athleteByUser;
 
       if (!athlete) {
@@ -354,7 +412,10 @@ export class RosterImportService {
   // VALIDACIONES Y LECTURA DEL CSV
   // =====================================================
 
-  private parseCsv(file: Express.Multer.File): RosterRow[] {
+  private parseCsv(
+    file: Express.Multer.File,
+    requiredHeaders: string[],
+  ): RosterRow[] {
     if (!file) {
       throw new BadRequestException(
         'Debes adjuntar un archivo CSV.',
@@ -398,11 +459,6 @@ export class RosterImportService {
       );
     }
 
-    const requiredHeaders = [
-      'email',
-      'student_code',
-    ];
-
     const headers = Object.keys(rows[0]);
 
     const missingHeaders = requiredHeaders.filter(
@@ -418,11 +474,16 @@ export class RosterImportService {
     return rows;
   }
 
-  private validateRow(row: RosterRow): void {
+  private validateRow(row: RosterRow, requireDocument = false): void {
     const email = String(row.email ?? '').trim();
     const studentCode = String(row.student_code ?? '').trim();
-    if (!email || !studentCode) {
+    const documentNumber = normalizeDocumentNumber(row.document_number);
+    if (!email || !studentCode || (requireDocument && !documentNumber)) {
       throw new Error('Todos los campos son obligatorios.');
+    }
+
+    if (documentNumber && !isValidDocumentNumber(documentNumber)) {
+      throw new Error(INVALID_DOCUMENT_NUMBER);
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
