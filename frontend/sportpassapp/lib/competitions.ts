@@ -48,8 +48,7 @@ export type CompetitionForm = {
 
 export type CallupAthlete = {
   id: string;
-  firstName: string;
-  lastName: string;
+  fullName: string,
   studentCode: string;
   email: string;
   calledUp: boolean;

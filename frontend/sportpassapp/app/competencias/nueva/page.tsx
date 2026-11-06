@@ -13,6 +13,7 @@ import {
   type CompetitionForm,
   type Team,
 } from "@/lib/competitions";
+import { useCompetitionPermissions } from "../session";
 
 const EMPTY: CompetitionForm = { name: "", teamId: "", startDate: "", endDate: "", startTime: "", endTime: "", location: "", type: "" };
 const FIELD_LABELS: Record<keyof CompetitionForm, string> = {
@@ -28,6 +29,7 @@ const FIELD_LABELS: Record<keyof CompetitionForm, string> = {
 
 export default function NewCompetitionPage() {
   const router = useRouter();
+  const { canCreate, isAthlete } = useCompetitionPermissions();
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [form, setForm] = useState<CompetitionForm>(EMPTY);
   const [missing, setMissing] = useState<Set<keyof CompetitionForm>>(new Set());
@@ -35,13 +37,15 @@ export default function NewCompetitionPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!canCreate || isAthlete) return;
+
     fetchMyTeams()
       .then((list) => {
         setTeams(list);
         if (list.length === 1) setForm((current) => ({ ...current, teamId: list[0].id }));
       })
       .catch((err) => setError(err.message));
-  }, []);
+  }, [canCreate, isAthlete]);
 
   const set = (field: keyof CompetitionForm) => (event: { target: { value: string } }) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -54,6 +58,8 @@ export default function NewCompetitionPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!canCreate || isAthlete) return;
+
     const empty = (Object.keys(form) as (keyof CompetitionForm)[]).filter((field) => !form[field].trim());
     setMissing(new Set(empty));
     if (empty.length) return setError(MESSAGES.required);
@@ -81,6 +87,25 @@ export default function NewCompetitionPage() {
       {FIELD_LABELS[field]} <span className="text-[#9a2929]" aria-hidden>*</span>
     </span>
   );
+
+  if (!canCreate || isAthlete) {
+    return (
+      <div className="space-y-4">
+        <BackLink />
+        <div className="admin-error" role="alert">
+          <p className="font-bold text-base">Acceso restringido</p>
+          <p className="mt-1">
+            Los deportistas no tienen permisos para registrar una competencia. Esta acción está reservada para entrenadores y administradores.
+          </p>
+          <div className="pt-3">
+            <Link href="/competencias" className="btn-secondary">
+              Volver a competencias
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (teams && teams.length === 0) {
     return (

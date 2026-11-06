@@ -297,7 +297,7 @@ export default function TeamRosterContent({
                           <tr key={assignment.id}>
                             <td>
                               <strong>
-                                {athlete.firstName} {athlete.lastName}
+                                {athlete.user.fullName} {athlete.lastName}
                               </strong>
                             </td>
 
@@ -377,13 +377,12 @@ export default function TeamRosterContent({
                       key={athlete.id}
                     >
                       <div className="roster-athlete-avatar">
-                        {athlete.firstName.charAt(0)}
-                        {athlete.lastName.charAt(0)}
+                        {(athlete.user.fullName?? "D").charAt(0).toUpperCase()}
                       </div>
 
                       <div className="roster-athlete-info">
                         <h3>
-                          {athlete.firstName} {athlete.lastName}
+                          {athlete.user.fullName}
                         </h3>
 
                         <p>{athlete.studentCode}</p>

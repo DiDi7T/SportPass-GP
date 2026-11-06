@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { dashboardPath } from "@/lib/auth";
 import { fetchCompetitions, fetchMyTeams, formatRange, STATUS_LABELS, TYPE_LABELS, type Competition, type Team } from "@/lib/competitions";
-import { useSession } from "./session";
+import { useSession, useCompetitionPermissions } from "./session";
 import { CancelCompetitionDialog } from "./cancel-dialog";
 import { EditCompetitionDialog } from "./edit-dialog";
 
@@ -19,6 +19,7 @@ export default function CompetitionsPage() {
 
 function Competitions() {
   const { user } = useSession();
+  const { canCreate, canEdit, canCancel, canChangeCallup } = useCompetitionPermissions();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -80,9 +81,17 @@ function Competitions() {
         <div>
           <p className="eyebrow">SPORTPASS · COMPETENCIAS</p>
           <h1>Competencias</h1>
-          <p>Registra y actualiza las competencias de tus equipos.</p>
+          <p>
+            {canCreate
+              ? "Registra y actualiza las competencias de tus equipos."
+              : "Consulta las competencias y convocatorias de los equipos representativos."}
+          </p>
         </div>
-        <Link href="/competencias/nueva" className="primary-button">Registrar competencia <span>+</span></Link>
+        {canCreate && (
+          <Link href="/competencias/nueva" className="primary-button">
+            Registrar competencia <span>+</span>
+          </Link>
+        )}
       </div>
 
       {notice && (
@@ -140,39 +149,53 @@ function Competitions() {
                 </div>
                 {/* Una competencia cancelada no se edita ni se vuelve a cancelar (HU7). */}
                 {!cancelled && (
-  <div className="flex flex-wrap gap-2">
-    <Link
-      href={`/competencias/${competition.id}/convocatoria`}
-      className="btn-secondary"
-    >
-      Gestionar convocatoria
-    </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/competencias/${competition.id}/convocatoria`}
+                      className="btn-secondary"
+                    >
+                      {canChangeCallup ? "Gestionar convocatoria" : "Ver convocatoria"}
+                    </Link>
 
-    <button
-      onClick={() => setEditing(competition)}
-      className="btn-secondary"
-    >
-      Editar
-    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => setEditing(competition)}
+                        className="btn-secondary"
+                      >
+                        Editar
+                      </button>
+                    )}
 
-    {competition.canCancel && (
-      <button
-        onClick={() => setCancelling(competition)}
-        className="btn-danger-outline"
-      >
-        Cancelar competencia
-      </button>
-    )}
-  </div>
-)}
+                    {canCancel && competition.canCancel && (
+                      <button
+                        onClick={() => setCancelling(competition)}
+                        className="btn-danger-outline"
+                      >
+                        Cancelar competencia
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
       </section>
 
-      {editing && <EditCompetitionDialog competition={editing} onClose={() => setEditing(null)} onUpdated={onUpdated} />}
-      {cancelling && <CancelCompetitionDialog competition={cancelling} onClose={() => setCancelling(null)} onCancelled={onCancelled} />}
+      {editing && canEdit && (
+        <EditCompetitionDialog
+          competition={editing}
+          onClose={() => setEditing(null)}
+          onUpdated={onUpdated}
+        />
+      )}
+      {cancelling && canCancel && (
+        <CancelCompetitionDialog
+          competition={cancelling}
+          onClose={() => setCancelling(null)}
+          onCancelled={onCancelled}
+        />
+      )}
     </div>
   );
 }

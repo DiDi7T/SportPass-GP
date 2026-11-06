@@ -19,37 +19,38 @@ export default function ImportAthletesPage() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] =
-    useState<AthleteImportResult | null>(null);
+  const [result, setResult] = useState<AthleteImportResult | null>(null);
 
   if (!session) {
     return (
-      <main className="min-h-screen grid place-items-center bg-base-200">
-        <p className="text-base-content/60">
-          Cargando sesión...
-        </p>
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-500">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <span>Cargando sesión...</span>
+        </div>
       </main>
     );
   }
 
   if (!session.user.roles.includes("admin")) {
     return (
-      <main className="min-h-screen grid place-items-center bg-base-200 p-6">
-        <div className="card bg-base-100 shadow-xl max-w-md">
-          <div className="card-body">
-            <h1 className="card-title">
-              Acceso restringido
-            </h1>
-            <p>
-              No tienes permisos para importar deportistas.
-            </p>
-            <Link
-              href="/admin/management"
-              className="btn btn-primary"
-            >
-              Volver
-            </Link>
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-2xl text-red-600">
+            🔒
           </div>
+          <h1 className="text-xl font-bold text-slate-900">
+            Acceso restringido
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            No tienes permisos de administrador para importar deportistas.
+          </p>
+          <Link
+            href="/admin/management"
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-blue-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
+          >
+            Volver a gestión
+          </Link>
         </div>
       </main>
     );
@@ -62,10 +63,9 @@ export default function ImportAthletesPage() {
       "estudiante2@icesi.edu.co,202612346,1107012346",
     ].join("\n");
 
-    const blob = new Blob(
-      ["\uFEFF" + content],
-      { type: "text/csv;charset=utf-8;" },
-    );
+    const blob = new Blob(["\uFEFF" + content], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -126,229 +126,331 @@ export default function ImportAthletesPage() {
   }
 
   return (
-    <main className="role-page admin-management-page import-athletes-page">
+    <main className="role-page admin-management-page min-h-screen bg-slate-50/50">
       <RoleNavbar
         role="admin"
         fullName={session.user.fullName}
         onLogout={logout}
       />
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-6">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+
+        {/* Migas de pan */}
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+          <Link href="/admin" className="transition hover:text-blue-700">
+            Administración
+          </Link>
+          <span>/</span>
           <Link
             href="/admin/athlete"
-            className="link link-primary text-sm"
+            className="transition hover:text-blue-700"
           >
-            ← Volver a deportistas
+            Deportistas
           </Link>
+          <span>/</span>
+          <span className="font-medium text-slate-800">
+            Importar
+          </span>
+        </div>
 
-          <h1 className="mt-4 text-3xl font-bold">
+        {/* Encabezado */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             Importar deportistas
           </h1>
-
-          <p className="mt-2 text-base-content/60">
-            Carga el listado general de deportistas de la
-            universidad mediante un archivo CSV.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+            Registra varios deportistas a la vez cargando el listado general
+            de la Universidad Icesi mediante un archivo CSV.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="card bg-base-100 shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">
-                1. Prepara tu archivo
-              </h2>
-
-              <p className="text-sm text-base-content/70">
-                El archivo debe contener las siguientes
-                columnas obligatorias:
-              </p>
-
-              <div className="overflow-x-auto">
-                <table className="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Columna</th>
-                      <th>Descripción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>email</td>
-                      <td>Correo institucional</td>
-                    </tr>
-                    <tr>
-                      <td>student_code</td>
-                      <td>Código estudiantil</td>
-                    </tr>
-                    <tr>
-                      <td>document_number</td>
-                      <td>Cédula o documento de identidad (con la que el entrenador registra la asistencia)</td>
-                    </tr>
-                  </tbody>
-                </table>
+        {/* Instrucciones */}
+        <section className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-5 sm:px-7">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg text-blue-700">
+                01
               </div>
-
-              <div className="alert alert-info mt-2">
-                <span className="text-sm">
-                  El correo debe pertenecer a una cuenta
-                  institucional previamente registrada en
-                  SportPass.
-                </span>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Prepara el archivo CSV
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Antes de importar, verifica que tu archivo tenga las
+                  columnas requeridas y que la información esté completa.
+                </p>
               </div>
-
-              <button
-                type="button"
-                className="btn btn-outline btn-primary mt-3"
-                onClick={downloadTemplate}
-              >
-                Descargar plantilla CSV
-              </button>
             </div>
-          </section>
+          </div>
 
-          <section className="card bg-base-100 shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">
-                2. Selecciona el archivo
-              </h2>
+          <div className="p-6 sm:px-7">
+            <div className="mb-5">
+              <h3 className="mb-3 text-sm font-semibold text-slate-800">
+                Columnas obligatorias
+              </h3>
 
-              <p className="text-sm text-base-content/70">
-                Selecciona el CSV que contiene los
-                deportistas que deseas registrar.
-              </p>
+              <div className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)] bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <span>Columna</span>
+                  <span>Descripción</span>
+                </div>
 
-              <input
-  ref={fileInputRef}
-  type="file"
-  accept=".csv,text/csv"
-  className="hidden"
-  onChange={handleFileChange}
-  disabled={loading}
-/>
+                <div className="divide-y divide-slate-100 text-sm">
+                  <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)] items-center gap-3 px-4 py-3.5">
+                    <code className="font-semibold text-blue-700">
+                      email
+                    </code>
+                    <span className="text-slate-600">
+                      Correo institucional del deportista.
+                    </span>
+                  </div>
 
-<button
-  type="button"
-  className="btn btn-outline btn-primary w-full mt-4"
-  onClick={() => fileInputRef.current?.click()}
-  disabled={loading}
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
-  </svg>
-  Seleccionar archivo CSV
-</button>
+                  <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)] items-center gap-3 px-4 py-3.5">
+                    <code className="font-semibold text-blue-700">
+                      student_code
+                    </code>
+                    <span className="text-slate-600">
+                      Código estudiantil.
+                    </span>
+                  </div>
 
-              {file && (
-                <div className="rounded-lg bg-base-200 p-3 mt-3">
-                  <p className="font-medium break-all">
-                    {file.name}
+                  <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)] items-center gap-3 px-4 py-3.5">
+                    <code className="font-semibold text-blue-700">
+                      document_number
+                    </code>
+                    <span className="text-slate-600">
+                      Número de documento de identidad.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-lg"></span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Ten en cuenta
                   </p>
-                  <p className="text-xs text-base-content/60">
-                    {(file.size / 1024).toFixed(2)} KB
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    El correo debe pertenecer a una cuenta institucional
+                    previamente registrada en SportPass.
                   </p>
                 </div>
-              )}
+              </div>
 
-              <p className="text-xs text-base-content/60 mt-2">
-                Formato permitido: CSV. Tamaño máximo: 5 MB.
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+              >
+                <span>↓</span>
+                Descargar plantilla
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Selección del archivo */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-5 sm:px-7">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg text-blue-700">
+                02
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Selecciona el archivo
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Carga el archivo CSV que contiene los deportistas que
+                  deseas registrar en SportPass.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 sm:p-7">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={loading}
+            />
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              className="group flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 px-5 py-10 text-center transition hover:border-blue-400 hover:bg-blue-50/40 disabled:cursor-not-allowed disabled:opacity-60 sm:py-12"
+            >
+              <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-2xl text-blue-700 transition group-hover:bg-blue-200">
+                ↑
+              </span>
+
+              <span className="text-base font-bold text-slate-800">
+                {file ? "Cambiar archivo" : "Selecciona tu archivo CSV"}
+              </span>
+
+              <span className="mt-2 text-sm text-slate-500">
+                Haz clic aquí para buscar el archivo en tu dispositivo.
+              </span>
+
+              <span className="mt-4 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm ring-1 ring-slate-200">
+                CSV · Máximo 5 MB
+              </span>
+            </button>
+
+            {file && (
+              <div className="mt-5 flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-bold text-blue-700 shadow-sm">
+                    CSV
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {file.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {(file.size / 1024).toFixed(2)} KB · Archivo seleccionado
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null);
+                    setError("");
+                    setResult(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
+                  }}
+                  disabled={loading}
+                  className="self-start rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-white hover:text-red-600 disabled:opacity-50 sm:self-center"
+                >
+                  Quitar archivo
+                </button>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                <span className="font-bold text-red-600">!</span>
+                <div>
+                  <p className="font-semibold">No fue posible continuar</p>
+                  <p className="mt-1 leading-5">{error}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-5 text-slate-500">
+                Verifica que el archivo corresponda a la plantilla
+                institucional antes de iniciar la importación.
               </p>
 
               <button
                 type="button"
-                className="btn btn-primary mt-4"
                 onClick={handleImport}
                 disabled={!file || loading}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               >
                 {loading ? (
                   <>
-                    <span className="loading loading-spinner loading-sm" />
-                    Importando...
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Importando deportistas...
                   </>
                 ) : (
-                  "Importar deportistas"
+                  <>
+                    <span>↑</span>
+                    Importar deportistas
+                  </>
                 )}
               </button>
-
-              {error && (
-                <div className="alert alert-error mt-4">
-                  <span>{error}</span>
-                </div>
-              )}
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
+        {/* Resultado de importación */}
         {result && (
-          <section className="card bg-base-100 shadow-sm mt-6">
-            <div className="card-body">
-              <h2 className="card-title">
-                Resultado de la importación
-              </h2>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-                <div className="stat bg-base-200 rounded-lg">
-                  <div className="stat-title">
-                    Registros
-                  </div>
-                  <div className="stat-value text-2xl">
-                    {result.totalRows}
-                  </div>
+          <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-6 py-5 sm:px-7">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-xl text-green-700">
+                  ✓
                 </div>
-
-                <div className="stat bg-base-200 rounded-lg">
-                  <div className="stat-title">
-                    Importados
-                  </div>
-                  <div className="stat-value text-2xl text-success">
-                    {result.imported}
-                  </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Resultado de la importación
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Resumen de los registros procesados.
+                  </p>
                 </div>
+              </div>
+            </div>
 
-                <div className="stat bg-base-200 rounded-lg col-span-2 md:col-span-1">
-                  <div className="stat-title">
-                    Fallidos
-                  </div>
-                  <div className="stat-value text-2xl text-error">
-                    {result.failed}
-                  </div>
-                </div>
+            <div className="p-6 sm:p-7">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <ResultCard
+                  label="Registros procesados"
+                  value={result.totalRows}
+                  description="Filas leídas del archivo"
+                  variant="default"
+                />
+                <ResultCard
+                  label="Importados correctamente"
+                  value={result.imported}
+                  description="Deportistas registrados"
+                  variant="success"
+                />
+                <ResultCard
+                  label="Registros fallidos"
+                  value={result.failed}
+                  description="No pudieron procesarse"
+                  variant="error"
+                />
               </div>
 
               {result.failed > 0 && (
-                <div className="mt-5">
-                  <h3 className="font-semibold mb-3">
-                    Registros que no pudieron importarse
-                  </h3>
+                <div className="mt-8">
+                  <div className="mb-4">
+                    <h3 className="text-base font-bold text-slate-900">
+                      Registros con errores
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Revisa los siguientes motivos para corregir el archivo
+                      y volver a importarlo.
+                    </p>
+                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="table table-sm table-zebra">
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full min-w-[600px] text-left text-sm">
                       <thead>
-                        <tr>
-                          <th>Fila</th>
-                          <th>Correo</th>
-                          <th>Motivo</th>
+                        <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                          <th className="px-5 py-3.5">Fila</th>
+                          <th className="px-5 py-3.5">Correo</th>
+                          <th className="px-5 py-3.5">Motivo del error</th>
                         </tr>
                       </thead>
-
-                      <tbody>
+                      <tbody className="divide-y divide-slate-100">
                         {result.errors.map((item, index) => (
-                          <tr key={`${item.row}-${index}`}>
-                            <td>{item.row}</td>
-                            <td>{item.email || "Sin correo"}</td>
-                            <td className="whitespace-normal">
+                          <tr
+                            key={`${item.row}-${index}`}
+                            className="transition hover:bg-slate-50/70"
+                          >
+                            <td className="px-5 py-4 font-mono text-xs text-slate-600">
+                              {item.row}
+                            </td>
+                            <td className="px-5 py-4 text-slate-700">
+                              {item.email || "Sin correo"}
+                            </td>
+                            <td className="whitespace-normal px-5 py-4 text-slate-600">
                               {item.reason}
                             </td>
                           </tr>
@@ -360,23 +462,90 @@ export default function ImportAthletesPage() {
               )}
 
               {result.failed === 0 && (
-                <div className="alert alert-success mt-4">
-                  Todos los registros se procesaron correctamente.
+                <div className="mt-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+                  <span className="font-bold text-green-700">✓</span>
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">
+                      Importación completada
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-green-700">
+                      Todos los registros se procesaron correctamente.
+                    </p>
+                  </div>
                 </div>
               )}
 
-              <div className="card-actions justify-end mt-4">
+              <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
                 <Link
                   href="/admin/athlete"
-                  className="btn btn-primary"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
                 >
-                  Ver deportistas
+                  Ver deportistas registrados
                 </Link>
               </div>
             </div>
           </section>
         )}
-      </main>
+
+        <div className="mt-8 text-center text-xs text-slate-400">
+          Universidad Icesi · SportPass
+        </div>
+      </div>
     </main>
+  );
+}
+
+function ResultCard({
+  label,
+  value,
+  description,
+  variant,
+}: {
+  label: string;
+  value: number;
+  description: string;
+  variant: "default" | "success" | "error";
+}) {
+  const styles = {
+    default: {
+      value: "text-slate-900",
+      icon: "bg-slate-100 text-slate-600",
+      symbol: "#",
+    },
+    success: {
+      value: "text-green-700",
+      icon: "bg-green-50 text-green-700",
+      symbol: "✓",
+    },
+    error: {
+      value: "text-red-600",
+      icon: "bg-red-50 text-red-600",
+      symbol: "!",
+    },
+  };
+
+  const style = styles[variant];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-500">
+          {label}
+        </p>
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${style.icon}`}
+        >
+          {style.symbol}
+        </span>
+      </div>
+
+      <p className={`mt-4 text-3xl font-extrabold tracking-tight ${style.value}`}>
+        {value}
+      </p>
+
+      <p className="mt-1 text-xs text-slate-400">
+        {description}
+      </p>
+    </div>
   );
 }

@@ -408,59 +408,57 @@ export class CompetitionsService {
 
   // Consultar integrantes activos y su estado de convocatoria.
   async findCallup(id: string, actor: Actor) {
-    const competition = await this.findManageable(id, actor);
+  const competition = await this.findManageable(id, actor);
 
-    const [members, callups] = await Promise.all([
-      this.teamAthletes.find({
-        where: {
-          team: { id: competition.teamId },
-          active: true,
-        },
-        relations: {
-          athlete: {
-            user: true,
+  const [members, callups] = await Promise.all([
+    this.teamAthletes.find({
+      where: {
+        team: { id: competition.teamId },
+        active: true,
+        athlete: {
+          isActive: true,
+          user: {
+            isActive: true,
           },
         },
-        order: {
-          createdAt: 'ASC',
+      },
+      relations: {
+        athlete: {
+          user: true,
         },
-      }),
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    }),
 
-      this.callups.find({
-        where: {
-          competition: { id },
-        },
-        relations: {
-          athlete: {
-            user: true,
-          },
-        },
-      }),
-    ]);
+    this.callups.find({
+      where: {
+        competition: { id },
+      },
+      relations: {
+        athlete: true,
+      },
+    }),
+  ]);
 
-    const calledUpIds = new Set(
-      callups.map((callup) => callup.athlete.id),
-    );
+  const calledUpIds = new Set(
+    callups.map((callup) => callup.athlete.id),
+  );
 
-    return {
-      competitionId: competition.id,
-      competitionName: competition.name,
-      teamId: competition.teamId,
-      athletes: members
-        .filter(
-          (member) =>
-            member.athlete.isActive &&
-            member.athlete.user.isActive,
-        )
-        .map((member) => ({
-          id: member.athlete.id,
-          firstName: member.athlete.user,
-          studentCode: member.athlete.studentCode,
-          email: member.athlete.user.email,
-          calledUp: calledUpIds.has(member.athlete.id),
-        })),
-    };
-  }
+  return {
+    competitionId: competition.id,
+    competitionName: competition.name,
+    teamId: competition.teamId,
+    athletes: members.map((member) => ({
+      id: member.athlete.id,
+      fullName: member.athlete.user.fullName,
+      studentCode: member.athlete.studentCode,
+      email: member.athlete.user.email,
+      calledUp: calledUpIds.has(member.athlete.id),
+    })),
+  };
+}
 
   // Guardar la selección completa de convocados.
   async saveCallup(

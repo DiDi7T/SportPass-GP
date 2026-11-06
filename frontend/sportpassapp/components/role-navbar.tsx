@@ -73,7 +73,6 @@ export default function RoleNavbar({
         <>
           {/* HU5: competencias del deportista (requiere 70% de asistencia). */}
           <Link className="role-menu-placeholder role-menu-link" href="/mis-competencias">Mis competencias</Link>
-          <Link className="role-menu-placeholder role-menu-link" href="/athlete#community">Opcion 3</Link>
         </>
       )}
       {/* HU9: registro de asistencia a entrenamientos. */}

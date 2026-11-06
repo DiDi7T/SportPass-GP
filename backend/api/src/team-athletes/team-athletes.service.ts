@@ -75,8 +75,7 @@ export class TeamAthletesService {
         return `NOT EXISTS ${subQuery}`;
       })
       .setParameter('teamId', teamId)
-      .orderBy('athlete.lastName', 'ASC')
-      .addOrderBy('athlete.firstName', 'ASC')
+      .orderBy('user.fullName','ASC')
       .getMany();
   }
 

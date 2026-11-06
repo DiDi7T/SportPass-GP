@@ -1,8 +1,8 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useRoleSession } from "@/lib/use-role-session";
 
 import {
   CallupAthlete,
@@ -23,12 +23,14 @@ export default function ConvocatoriaContent({
   competitionId: propCompetitionId,
 }: Props = {}) {
   const unwrappedParams = params ? use(params) : undefined;
-  const routeParams = useParams<{ competitionId: string }>();
   const competitionId =
-    propCompetitionId ??
-    unwrappedParams?.competitionId ??
-    routeParams?.competitionId ??
-    "";
+    propCompetitionId ?? unwrappedParams?.competitionId ?? "";
+
+  const { session } = useRoleSession();
+  const user = session?.user;
+  const isAthlete = user?.roles.includes("athlete") ?? false;
+  const hasManagePermission = user?.permissions.includes("competitions:manage") ?? false;
+  const canChangeCallup = Boolean(user && hasManagePermission && !isAthlete);
 
   const [data, setData] = useState<CompetitionCallup | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -79,6 +81,8 @@ export default function ConvocatoriaContent({
   }, [competitionId]);
 
   const toggleAthlete = (athleteId: string) => {
+    if (!canChangeCallup) return;
+
     setSelectedIds((current) =>
       current.includes(athleteId)
         ? current.filter((id) => id !== athleteId)
@@ -89,19 +93,21 @@ export default function ConvocatoriaContent({
   };
 
   const selectAll = () => {
-    if (!data) return;
+    if (!data || !canChangeCallup) return;
 
     setSelectedIds(data.athletes.map((athlete) => athlete.id));
     setSuccess("");
   };
 
   const clearSelection = () => {
+    if (!canChangeCallup) return;
+
     setSelectedIds([]);
     setSuccess("");
   };
 
   const handleSave = async () => {
-    if (!competitionId) return;
+    if (!competitionId || !canChangeCallup) return;
 
     try {
       setSaving(true);
@@ -133,11 +139,13 @@ export default function ConvocatoriaContent({
 
   const filteredAthletes = useMemo(() => {
     if (!data) return [];
+
     const term = search.trim().toLowerCase();
     if (!term) return data.athletes;
 
     return data.athletes.filter((athlete) => {
-      const fullName = `${athlete.firstName} ${athlete.lastName}`.toLowerCase();
+      const fullName = athlete.fullName.toLowerCase();
+
       return (
         fullName.includes(term) ||
         athlete.studentCode.toLowerCase().includes(term) ||
@@ -328,6 +336,14 @@ type AthleteRowProps = {
 };
 
 function AthleteRow({ athlete, checked, onToggle }: AthleteRowProps) {
+  const initials = athlete.fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((name) => name.charAt(0))
+    .join("")
+    .toUpperCase();
+
   return (
     <label className="flex cursor-pointer items-center gap-4 p-4 transition hover:bg-slate-50 sm:px-5">
       <input
@@ -338,13 +354,12 @@ function AthleteRow({ athlete, checked, onToggle }: AthleteRowProps) {
       />
 
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--lavender) text-xs font-bold text-(--icesi)">
-        {athlete.firstName.charAt(0)}
-        {athlete.lastName.charAt(0)}
+        {initials || "?"}
       </div>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-(--ink)">
-          {athlete.firstName} {athlete.lastName}
+          {athlete.fullName}
         </p>
 
         <p className="truncate text-xs text-(--muted)">
