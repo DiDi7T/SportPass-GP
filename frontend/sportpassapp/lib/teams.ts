@@ -26,6 +26,9 @@ export type CreateTeamInput = {
 export function getTeams() {
   return apiFetch<Team[]>("/teams");
 }
+export function getMyTeams() {
+  return apiFetch<Team[]>("/teams/mine");
+}
 
 export function getTeam(id: string) {
   return apiFetch<Team>(`/teams/${id}`);
@@ -42,4 +45,6 @@ export function deactivateTeam(id: string) {
   return apiFetch<Team>(`/teams/${id}`, {
     method: "DELETE",
   });
+
+  
 }

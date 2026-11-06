@@ -80,4 +80,18 @@ export class TeamsService {
 
     return this.teamRepository.save(team);
   }
+  async findByCoach(coachId: string): Promise<Team[]> {
+  return this.teamRepository.find({
+    where: {
+      coach: { id: coachId },
+      isActive: true,
+    },
+    relations: {
+      coach: true,
+    },
+    order: {
+      name: 'ASC',
+    },
+  });
+}
 }
