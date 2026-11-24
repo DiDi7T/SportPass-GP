@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import RoleNavbar from "@/components/role-navbar";
 import AcademicConflictsPanel from "@/components/academic-conflicts-panel";
+import TrainingAbsenceRequestForm from "@/components/training-absence-request-form";
 import { dashboardPath } from "@/lib/auth";
 import { TYPE_LABELS } from "@/lib/competitions";
 import {
@@ -78,6 +79,8 @@ export default function MyCompetitionsPage() {
             <span className="role-chip">Asistencia {data.attendancePercentage}%</span>
           )}
         </div>
+
+        {session.user.roles.includes("athlete") && <TrainingAbsenceRequestForm />}
 
         {error && <p role="alert" className="admin-error">{error}</p>}
         {!data && !block && !error && <p className="admin-loading">Cargando tus competencias…</p>}

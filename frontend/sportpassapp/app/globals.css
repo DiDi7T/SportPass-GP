@@ -724,6 +724,57 @@ button {
   color: var(--muted);
   font-size: 11px;
 }
+.training-absence-panel {
+  padding: 32px;
+  border-radius: 14px;
+}
+.training-absence-panel .admin-panel-heading {
+  margin-bottom: 24px;
+}
+.training-absence-panel .admin-panel-heading h2 {
+  font-size: 24px;
+  line-height: 1.3;
+}
+.training-absence-panel .admin-panel-heading p {
+  font-size: 16px;
+  line-height: 1.55;
+}
+.training-absence-panel .field-label {
+  margin-bottom: 0;
+  color: var(--ink);
+  font-size: 16px;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+.training-absence-panel .input {
+  min-height: 52px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-weight: 400;
+}
+.training-absence-panel .training-absence-notice,
+.training-absence-panel .admin-notice,
+.training-absence-panel .admin-error,
+.training-absence-panel .admin-loading {
+  font-size: 16px;
+  line-height: 1.55;
+}
+.training-absence-panel .training-absence-submit {
+  min-width: 220px;
+  min-height: 52px;
+  font-size: 16px;
+}
+@media (max-width: 640px) {
+  .training-absence-panel {
+    padding: 20px;
+  }
+  .training-absence-panel .admin-panel-heading h2 {
+    font-size: 21px;
+  }
+  .training-absence-panel .training-absence-submit {
+    width: 100%;
+  }
+}
 .admin-search {
   display: flex;
   align-items: center;

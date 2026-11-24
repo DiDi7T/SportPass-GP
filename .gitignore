@@ -10,6 +10,10 @@
 
 # Project SQL scripts/seeds kept local for manual database execution
 **/sql/
+backend/api/migrations/
+!backend/api/migrations/
+backend/api/migrations/*
+!backend/api/migrations/004_hu11_training_absence_requests.sql
 
 # Build output and generated artifacts
 **/dist/

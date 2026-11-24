@@ -55,6 +55,19 @@
 - **CA3. Cancelada en el historial:** la competencia se muestra como "Cancelada" y no admite nuevas solicitudes de permiso.
 - **CA4. Restricción:** solo el entrenador del equipo de la competencia ve y puede usar la opción "Cancelar competencia".
 
+## HU11. Solicitud de notificación de ausencia por entrenamiento (SCRUM-14)
+
+En `/mis-competencias`, un deportista activo puede registrar un aviso solo para una competencia futura, no cancelada y con convocatoria registrada a su nombre. La solicitud exige materia, fecha y horario del entrenamiento, nombre del docente y correo `@icesi.edu.co`; queda en `pending_coach_approval` (mostrado como "Pendiente de aprobación del entrenador"). Se asocia a todos los entrenadores activos de la disciplina, incluyendo los asignados en `team_coaches` y el entrenador principal legado del equipo.
+
+El formulario muestra que el aviso está sujeto al aval del entrenador y no reemplaza las excusas oficiales de Bienestar Universitario. La revisión del entrenador, el seguimiento de solicitudes (HU12) y el envío efectivo de correo no forman parte de esta implementación de HU11.
+
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| GET | `/api/me/training-absence-requests/eligible-competitions` | Competencias futuras con convocatoria activa del deportista |
+| POST | `/api/me/training-absence-requests` | Crear una solicitud pendiente |
+
+Para instalaciones con `DB_SYNCHRONIZE=false`, aplicar `backend/api/migrations/004_hu11_training_absence_requests.sql` antes de usar estos endpoints.
+
 ### Decisiones (backend, Task 1)
 
 - Cancelar no borra la competencia: queda con `status = 'cancelada'`, `cancellation_reason`, `cancelled_by` y `cancelled_at`. Los tres campos nuevos son opcionales, así que HU4/HU6 no cambian.
@@ -62,7 +75,7 @@
 - No se puede cancelar dos veces, ni cancelar una competencia que ya terminó, ni editar una competencia cancelada (409).
 - Las respuestas de `/api/competitions` incluyen `status`, `cancellation` (`reason`, `cancelledAt`) y `canCancel`, que el frontend usa para mostrar u ocultar el botón.
 - CA3: `acceptsPermissionRequests(competition)` (en `competitions.service.ts`) devuelve `false` para una competencia cancelada; la solicitud de permiso (SCRUM-14) debe usarla antes de crear una.
-- CA2: `CompetitionCancellationEffects` es el punto único de efectos. `annulPermissionRequests` corre en la misma transacción que la cancelación y `notifyCancellation` después de confirmarla. Hoy no anulan ni envían nada porque las solicitudes (SCRUM-14) y las notificaciones (SCRUM-35/37) son del Sprint 2.
+- CA2: `CompetitionCancellationEffects` es el punto único de efectos. `annulPermissionRequests` corre en la misma transacción que la cancelación y `notifyCancellation` después de confirmarla. Ambos siguen como placeholders; el alcance de HU11 no incluye cancelar solicitudes existentes ni notificar la cancelación.
 
 ## Cómo probar
 
