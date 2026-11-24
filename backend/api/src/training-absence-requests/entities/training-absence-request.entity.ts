@@ -48,6 +48,15 @@ export class TrainingAbsenceRequest {
   @Column({ type: 'varchar', length: 40, default: PENDING_COACH_APPROVAL })
   status!: string;
 
+  @Column({ name: 'coach_responded_at', type: 'timestamptz', nullable: true })
+  coachRespondedAt!: Date | null;
+
+  @Column({ name: 'rejection_comment', type: 'varchar', length: 1000, nullable: true })
+  rejectionComment!: string | null;
+
+  @Column({ name: 'teacher_email_sent_at', type: 'timestamptz', nullable: true })
+  teacherEmailSentAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

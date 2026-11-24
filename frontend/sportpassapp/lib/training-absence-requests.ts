@@ -28,8 +28,37 @@ export type TrainingAbsenceRequestCreated = CreateTrainingAbsenceRequest & {
   coaches: { id: string; fullName: string }[];
 };
 
+export type TrainingAbsenceRequestStatus =
+  | 'pending_coach_approval'
+  | 'approved_by_coach'
+  | 'rejected_by_coach'
+  | 'cancelled';
+
+export type MyTrainingAbsenceRequest = {
+  id: string;
+  competition: { id: string; name: string; teamName: string };
+  trainingDate: string;
+  startTime: string;
+  endTime: string;
+  subjectName: string;
+  teacherName: string;
+  teacherEmail: string;
+  status: TrainingAbsenceRequestStatus | string;
+  statusLabel: string;
+  createdAt: string;
+  coachRespondedAt: string | null;
+  rejectionComment: string | null;
+  teacherEmailSentAt: string | null;
+};
+
 export const fetchEligibleCompetitions = () =>
   apiFetch<EligibleCompetition[]>('/me/training-absence-requests/eligible-competitions');
+
+export const fetchMyTrainingAbsenceRequests = () =>
+  apiFetch<MyTrainingAbsenceRequest[]>('/me/training-absence-requests');
+
+export const fetchMyTrainingAbsenceRequest = (id: string) =>
+  apiFetch<MyTrainingAbsenceRequest>(`/me/training-absence-requests/${id}`);
 
 export const createTrainingAbsenceRequest = (data: CreateTrainingAbsenceRequest) =>
   apiFetch<TrainingAbsenceRequestCreated>('/me/training-absence-requests', {

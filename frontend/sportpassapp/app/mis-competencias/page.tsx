@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import RoleNavbar from "@/components/role-navbar";
 import AcademicConflictsPanel from "@/components/academic-conflicts-panel";
 import TrainingAbsenceRequestForm from "@/components/training-absence-request-form";
+import TrainingAbsenceRequestsPanel from "@/components/training-absence-requests-panel";
 import { dashboardPath } from "@/lib/auth";
 import { TYPE_LABELS } from "@/lib/competitions";
 import {
@@ -80,7 +81,12 @@ export default function MyCompetitionsPage() {
           )}
         </div>
 
-        {session.user.roles.includes("athlete") && <TrainingAbsenceRequestForm />}
+        {session.user.roles.includes("athlete") && (
+          <>
+            <TrainingAbsenceRequestForm />
+            <TrainingAbsenceRequestsPanel />
+          </>
+        )}
 
         {error && <p role="alert" className="admin-error">{error}</p>}
         {!data && !block && !error && <p className="admin-loading">Cargando tus competencias…</p>}

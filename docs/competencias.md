@@ -68,6 +68,32 @@ El formulario muestra que el aviso está sujeto al aval del entrenador y no reem
 
 Para instalaciones con `DB_SYNCHRONIZE=false`, aplicar `backend/api/migrations/004_hu11_training_absence_requests.sql` antes de usar estos endpoints.
 
+## HU12. Consulta de estado de mis solicitudes (SCRUM-15)
+
+La sección "Mis solicitudes de ausencia" en `/mis-competencias` muestra las solicitudes propias más recientes y permite abrir cada detalle. La API solo devuelve solicitudes cuyo `athlete_id` corresponde al usuario autenticado; no se acepta un identificador de deportista desde el cliente.
+
+La página actualiza el listado y el detalle abierto cada 15 segundos, y también al volver a enfocar la pestaña. Esto refleja automáticamente cambios escritos por el flujo de revisión del entrenador, sin implementar aquí acciones para aprobar o rechazar.
+
+### Contrato para el flujo de aprobación
+
+Para que los estados y trazabilidad se reflejen en HU12, el flujo que revise la solicitud debe usar estos valores y columnas:
+
+| Acción | `status` | Datos de trazabilidad |
+| --- | --- | --- |
+| Pendiente | `pending_coach_approval` | `coach_responded_at`, `rejection_comment` y `teacher_email_sent_at` permanecen `NULL` |
+| Aprobada | `approved_by_coach` | Guardar fecha de respuesta en `coach_responded_at`; establecer `teacher_email_sent_at` solo tras confirmar el envío |
+| Rechazada | `rejected_by_coach` | Guardar fecha de respuesta en `coach_responded_at` y la justificación en `rejection_comment` |
+| Cancelada | `cancelled` | Cambiar estado a `cancelled` |
+
+Si la otra implementación utiliza valores distintos, debe adaptar este contrato o actualizar el mapeo de estados de HU12. Las confirmaciones de correo no se inventan: mientras `teacher_email_sent_at` sea `NULL`, la interfaz indica que no hay confirmación registrada.
+
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| GET | `/api/me/training-absence-requests` | Listar solicitudes del deportista autenticado |
+| GET | `/api/me/training-absence-requests/:id` | Consultar detalle propio y trazabilidad |
+
+Para bases con `DB_SYNCHRONIZE=false`, aplicar `backend/api/migrations/005_hu12_training_absence_traceability.sql` después de la migración 004. Con `DB_SYNCHRONIZE=true`, TypeORM crea las columnas desde la entidad.
+
 ### Decisiones (backend, Task 1)
 
 - Cancelar no borra la competencia: queda con `status = 'cancelada'`, `cancellation_reason`, `cancelled_by` y `cancelled_at`. Los tres campos nuevos son opcionales, así que HU4/HU6 no cambian.

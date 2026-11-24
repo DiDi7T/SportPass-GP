@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -17,6 +18,7 @@ import {
   PENDING_COACH_APPROVAL,
   TrainingAbsenceRequest,
 } from './entities/training-absence-request.entity';
+import { absenceRequestStatusLabel } from './absence-request-status';
 
 const isRealDate = (value: string) => {
   const [year, month, day] = value.split('-').map(Number);
@@ -56,6 +58,49 @@ export class TrainingAbsenceRequestsService {
       throw new ForbiddenException('Solo un deportista activo puede crear solicitudes.');
     }
     return athlete;
+  }
+
+  private toRequestResponse(request: TrainingAbsenceRequest) {
+    return {
+      id: request.id,
+      competition: {
+        id: request.competition.id,
+        name: request.competition.name,
+        teamName: request.competition.team.name,
+      },
+      trainingDate: request.trainingDate,
+      startTime: request.startTime.slice(0, 5),
+      endTime: request.endTime.slice(0, 5),
+      subjectName: request.subjectName,
+      teacherName: request.teacherName,
+      teacherEmail: request.teacherEmail,
+      status: request.status,
+      statusLabel: absenceRequestStatusLabel(request.status),
+      createdAt: request.createdAt,
+      coachRespondedAt: request.coachRespondedAt,
+      rejectionComment: request.rejectionComment,
+      teacherEmailSentAt: request.teacherEmailSentAt,
+    };
+  }
+
+  async findMine(userId: string) {
+    const athlete = await this.findActiveAthlete(userId);
+    const requests = await this.dataSource.getRepository(TrainingAbsenceRequest).find({
+      where: { athlete: { id: athlete.id } },
+      relations: { competition: { team: true } },
+      order: { createdAt: 'DESC' },
+    });
+    return requests.map(request => this.toRequestResponse(request));
+  }
+
+  async findOneMine(userId: string, requestId: string) {
+    const athlete = await this.findActiveAthlete(userId);
+    const request = await this.dataSource.getRepository(TrainingAbsenceRequest).findOne({
+      where: { id: requestId, athlete: { id: athlete.id } },
+      relations: { competition: { team: true } },
+    });
+    if (!request) throw new NotFoundException('Solicitud no encontrada.');
+    return this.toRequestResponse(request);
   }
 
   private async findActiveCallups(athleteId: string, now: Date) {

@@ -47,6 +47,7 @@ describe('TrainingAbsenceRequestsService', () => {
   const teamCoaches: any = { find: jest.fn() };
   const users: any = { find: jest.fn() };
   const requestRepository: any = { create: jest.fn((value: any) => value), save: jest.fn() };
+  const requestsReadRepository: any = { find: jest.fn(), findOne: jest.fn() };
   const requestCoachesRepository: any = { insert: jest.fn() };
   const manager: any = {
     getRepository: jest.fn((entity: unknown) =>
@@ -54,6 +55,7 @@ describe('TrainingAbsenceRequestsService', () => {
   };
   const dataSource: any = {
     transaction: jest.fn((work: (value: unknown) => Promise<unknown>) => work(manager)),
+    getRepository: jest.fn(() => requestsReadRepository),
   };
   let service: TrainingAbsenceRequestsService;
 
@@ -73,6 +75,8 @@ describe('TrainingAbsenceRequestsService', () => {
       { id: 'coach-1', fullName: 'Entrenador Uno', roles: [{ name: 'coach' }] },
       { id: 'coach-2', fullName: 'Entrenadora Dos', roles: [{ name: 'coach' }] },
     ]);
+    requestsReadRepository.find.mockResolvedValue([]);
+    requestsReadRepository.findOne.mockResolvedValue(null);
     requestRepository.save.mockImplementation(async (value: any) => ({
       ...value,
       id: 'request-1',
@@ -145,5 +149,67 @@ describe('TrainingAbsenceRequestsService', () => {
 
     const errors = await validate(invalid);
     expect(errors.map(error => error.property)).toEqual(expect.arrayContaining(['teacherEmail', 'startTime']));
+  });
+
+  it('lists only the authenticated athlete requests, newest first', async () => {
+    requestsReadRepository.find.mockResolvedValue([{
+      id: 'request-1',
+      competition: { id: 'competition-1', name: 'Copa', team: { name: 'Baloncesto' } },
+      trainingDate: '2099-05-08',
+      startTime: '16:00:00',
+      endTime: '18:00:00',
+      subjectName: 'Matemáticas',
+      teacherName: 'Docente Demo',
+      teacherEmail: 'docente@icesi.edu.co',
+      status: PENDING_COACH_APPROVAL,
+      createdAt: new Date('2026-11-24T12:00:00.000Z'),
+      coachRespondedAt: null,
+      rejectionComment: null,
+      teacherEmailSentAt: null,
+    }]);
+
+    await expect(service.findMine('athlete-user')).resolves.toMatchObject([{
+      id: 'request-1',
+      statusLabel: 'Pendiente',
+      startTime: '16:00',
+      endTime: '18:00',
+      competition: { name: 'Copa', teamName: 'Baloncesto' },
+    }]);
+    expect(requestsReadRepository.find).toHaveBeenCalledWith(expect.objectContaining({
+      where: { athlete: { id: 'athlete-1' } },
+      order: { createdAt: 'DESC' },
+    }));
+  });
+
+  it('does not expose another athlete request by id', async () => {
+    await expect(service.findOneMine('athlete-user', 'another-athletes-request'))
+      .rejects.toThrow('Solicitud no encontrada.');
+    expect(requestsReadRepository.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'another-athletes-request', athlete: { id: 'athlete-1' } },
+    }));
+  });
+
+  it('returns response and email traceability when they have been recorded', async () => {
+    requestsReadRepository.findOne.mockResolvedValue({
+      id: 'request-1',
+      competition: { id: 'competition-1', name: 'Copa', team: { name: 'Baloncesto' } },
+      trainingDate: '2099-05-08',
+      startTime: '16:00:00',
+      endTime: '18:00:00',
+      subjectName: 'Matemáticas',
+      teacherName: 'Docente Demo',
+      teacherEmail: 'docente@icesi.edu.co',
+      status: 'rejected_by_coach',
+      createdAt: new Date('2026-11-24T12:00:00.000Z'),
+      coachRespondedAt: new Date('2026-11-24T13:00:00.000Z'),
+      rejectionComment: 'No se pudo validar la asistencia.',
+      teacherEmailSentAt: null,
+    });
+
+    await expect(service.findOneMine('athlete-user', 'request-1')).resolves.toMatchObject({
+      statusLabel: 'Rechazada',
+      coachRespondedAt: new Date('2026-11-24T13:00:00.000Z'),
+      rejectionComment: 'No se pudo validar la asistencia.',
+    });
   });
 });

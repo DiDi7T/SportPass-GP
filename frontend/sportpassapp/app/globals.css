@@ -775,6 +775,221 @@ button {
     width: 100%;
   }
 }
+.training-requests-launcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 56px 0 64px;
+  padding: 24px 28px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.training-requests-launcher h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+.training-requests-launcher p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.training-requests-open {
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+.training-requests-dialog {
+  width: min(1120px, calc(100% - 32px));
+  max-width: none;
+  max-height: min(88vh, 900px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-top: 5px solid var(--icesi);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 80px rgb(25 29 76 / 24%);
+}
+.training-requests-dialog::backdrop {
+  background: rgb(25 29 76 / 55%);
+}
+.training-requests-dialog-content {
+  padding: 30px;
+}
+.training-requests-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.training-requests-heading h2 {
+  margin: 0;
+  font-size: 24px;
+}
+.training-requests-heading p:last-child {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.training-requests-actions {
+  display: flex;
+  gap: 8px;
+}
+.training-requests-empty {
+  padding: 20px 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+.training-requests-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.training-requests-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.training-requests-table th,
+.training-requests-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  line-height: 1.45;
+  vertical-align: middle;
+}
+.training-requests-table th {
+  background: #f7f7fb;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.training-requests-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.training-requests-table tbody tr.is-selected {
+  background: #f8f8ff;
+}
+.training-requests-table td a,
+.training-request-detail a {
+  color: var(--icesi);
+  text-decoration: underline;
+}
+.training-requests-table td a {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.training-requests-time {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+.training-request-status {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #f1f1f4;
+  color: #4b4d57;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.training-request-status.is-pending_coach_approval {
+  background: #fff4d6;
+  color: #805500;
+}
+.training-request-status.is-approved_by_coach {
+  background: #e8f7ed;
+  color: #21683b;
+}
+.training-request-status.is-rejected_by_coach {
+  background: #fff0f0;
+  color: #992b2b;
+}
+.training-request-status.is-cancelled {
+  background: #f1f1f4;
+  color: #5b5d67;
+}
+.training-request-detail-toggle {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--lavender);
+  color: var(--icesi);
+  font-size: 14px;
+  font-weight: 700;
+}
+.training-request-detail {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfbff;
+}
+.training-request-detail h3 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+.training-request-detail dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+.training-request-detail dt {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+.training-request-detail dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .training-requests-launcher {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    margin: 40px 0 48px;
+    padding: 22px;
+  }
+  .training-requests-launcher h2 {
+    font-size: 17px;
+  }
+  .training-requests-open {
+    width: 100%;
+  }
+  .training-requests-dialog-content {
+    padding: 20px;
+  }
+  .training-requests-heading {
+    flex-direction: column;
+  }
+  .training-requests-heading h2 {
+    font-size: 21px;
+  }
+  .training-requests-actions {
+    width: 100%;
+  }
+  .training-requests-actions button {
+    flex: 1;
+  }
+  .training-request-detail dl {
+    grid-template-columns: 1fr;
+  }
+}
 .admin-search {
   display: flex;
   align-items: center;

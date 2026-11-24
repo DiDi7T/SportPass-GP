@@ -14,6 +14,7 @@ backend/api/migrations/
 !backend/api/migrations/
 backend/api/migrations/*
 !backend/api/migrations/004_hu11_training_absence_requests.sql
+!backend/api/migrations/005_hu12_training_absence_traceability.sql
 
 # Build output and generated artifacts
 **/dist/
