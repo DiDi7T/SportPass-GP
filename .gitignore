@@ -77,3 +77,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Configuración local del entorno de desarrollo
+.claude/
