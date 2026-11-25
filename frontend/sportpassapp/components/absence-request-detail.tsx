@@ -29,15 +29,13 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-// Vista de solo lectura (HU16 CA3 y HU20 CA3): no ofrece acciones sobre la solicitud y no
-// muestra información académica del estudiante (promedio ni historial).
+// Vista de solo lectura: no ofrece acciones sobre la solicitud (HU20 CA3). La aprobación o el
+// rechazo por parte del entrenador corresponden a HU17.
 export default function AbsenceRequestDetail({
   request,
-  audience,
   onClose,
 }: {
   request: ReviewedAbsenceRequest;
-  audience: "teacher" | "admin";
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -62,7 +60,7 @@ export default function AbsenceRequestDetail({
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Solicitud de ausencia</p>
             <h2 id="absence-request-title" className="text-xl font-bold">{athlete.fullName}</h2>
-            <p className="text-sm text-slate-500">{request.subjectName} · {formatDay(request.trainingDate)}</p>
+            <p className="text-sm text-slate-500">Entrenamiento del {formatDay(request.trainingDate)} · {request.startTime} – {request.endTime}</p>
           </div>
           <StatusBadge status={request.status} label={request.statusLabel} />
         </header>
@@ -88,10 +86,11 @@ export default function AbsenceRequestDetail({
           </Field>
         </Section>
 
-        <Section title="Clase">
-          <Field label="Materia">{request.subjectName}</Field>
-          <Field label="Fecha y horario">{formatDay(request.trainingDate)} · {request.startTime} – {request.endTime}</Field>
-          {audience === "admin" && <Field label="Profesor">{request.teacherName} · {request.teacherEmail}</Field>}
+        <Section title="Entrenamiento y asignatura">
+          <Field label="Fecha y horario del entrenamiento">{formatDay(request.trainingDate)} · {request.startTime} – {request.endTime}</Field>
+          <Field label="Asignatura afectada">{request.subjectName}</Field>
+          <Field label="Docente">{request.teacherName}</Field>
+          <Field label="Correo del docente">{request.teacherEmail}</Field>
         </Section>
 
         <Section title="Competencia">
@@ -106,7 +105,7 @@ export default function AbsenceRequestDetail({
           <Field label="Solicitada">{formatDateTime(request.createdAt)}</Field>
           <Field label="Respuesta del entrenador">{responded ?? "Sin respuesta"}</Field>
           {request.rejectionComment && <Field label="Motivo del rechazo">{request.rejectionComment}</Field>}
-          <Field label="Correo al profesor">{emailSent ? `Enviado el ${emailSent}` : "Sin confirmación de envío"}</Field>
+          <Field label="Correo al docente">{emailSent ? `Enviado el ${emailSent}` : "Sin confirmación de envío"}</Field>
         </Section>
 
         <div className="flex justify-end border-t border-slate-200 pt-4">

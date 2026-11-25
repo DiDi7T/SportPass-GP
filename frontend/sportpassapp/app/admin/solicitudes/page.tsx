@@ -19,8 +19,8 @@ import {
 } from "@/lib/absence-review";
 
 const HISTORY_PERMISSION = "absence-requests:history";
-const EMPTY_FILTERS: AdminFilters = { teamId: "", athleteId: "", competitionId: "", teacherEmail: "", status: "", from: "", to: "" };
-const NO_OPTIONS: AdminFilterOptions = { teams: [], athletes: [], competitions: [], teachers: [] };
+const EMPTY_FILTERS: AdminFilters = { teamId: "", athleteId: "", competitionId: "", teacherEmail: "", coachId: "", status: "", from: "", to: "" };
+const NO_OPTIONS: AdminFilterOptions = { teams: [], athletes: [], competitions: [], teachers: [], coaches: [] };
 const inputClass = "mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100";
 
 type Result = { key: string; requests: ReviewedAbsenceRequest[]; error: string };
@@ -133,18 +133,19 @@ export default function AdminRequestsHistoryPage() {
           <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">Tu cuenta no tiene permiso para consultar el historial de solicitudes.</p>
         ) : (
           <>
-            <section aria-label="Filtros" className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+            <section aria-label="Filtros" className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-3">
               {select("teamId", "Equipo", "Todos los equipos", options.teams)}
               {select("athleteId", "Deportista", "Todos los deportistas", options.athletes)}
               {select("competitionId", "Competencia", "Todas las competencias", options.competitions)}
               {select("teacherEmail", "Profesor", "Todos los profesores", options.teachers)}
+              {select("coachId", "Entrenador", "Todos los entrenadores", options.coaches)}
               {select("status", "Estado", "Todos los estados", STATUS_OPTIONS.map((status) => ({ id: status.value, label: status.label })))}
               <label className="text-sm font-medium text-slate-700">
-                Clase desde
+                Entrenamiento desde
                 <input type="date" className={inputClass} value={filters.from} max={filters.to || undefined} onChange={setFilter("from")} />
               </label>
               <label className="text-sm font-medium text-slate-700">
-                Clase hasta
+                Entrenamiento hasta
                 <input type="date" className={inputClass} value={filters.to} min={filters.from || undefined} onChange={setFilter("to")} />
               </label>
               <div className="flex items-end">
@@ -181,7 +182,7 @@ export default function AdminRequestsHistoryPage() {
                         <th className="px-4 py-3 font-semibold">Deportista</th>
                         <th className="px-4 py-3 font-semibold">Equipo</th>
                         <th className="px-4 py-3 font-semibold">Competencia</th>
-                        <th className="px-4 py-3 font-semibold">Clase</th>
+                        <th className="px-4 py-3 font-semibold">Entrenamiento</th>
                         <th className="px-4 py-3 font-semibold">Profesor</th>
                         <th className="px-4 py-3 font-semibold">Estado</th>
                         <th className="px-4 py-3"><span className="sr-only">Detalle</span></th>
@@ -193,7 +194,7 @@ export default function AdminRequestsHistoryPage() {
                           <td className="px-4 py-3 font-medium text-slate-900">{request.athlete.fullName}</td>
                           <td className="px-4 py-3 text-slate-600">{request.competition.team.name}</td>
                           <td className="px-4 py-3 text-slate-600">{request.competition.name}</td>
-                          <td className="px-4 py-3 text-slate-600">{request.subjectName}<span className="block text-xs text-slate-500">{formatDay(request.trainingDate)} · {request.startTime} – {request.endTime}</span></td>
+                          <td className="px-4 py-3 text-slate-600">{formatDay(request.trainingDate)} · {request.startTime} – {request.endTime}<span className="block text-xs text-slate-500">{request.subjectName}</span></td>
                           <td className="px-4 py-3 text-slate-600">{request.teacherName}</td>
                           <td className="px-4 py-3"><StatusBadge status={request.status} label={request.statusLabel} /></td>
                           <td className="px-4 py-3 text-right">
@@ -210,7 +211,7 @@ export default function AdminRequestsHistoryPage() {
         )}
       </div>
 
-      {detail && <AbsenceRequestDetail request={detail} audience="admin" onClose={() => setDetail(null)} />}
+      {detail && <AbsenceRequestDetail request={detail} onClose={() => setDetail(null)} />}
     </main>
   );
 }

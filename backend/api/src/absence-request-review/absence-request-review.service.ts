@@ -1,20 +1,18 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CompetitionCallup } from '../competitions/entities/competition-callup.entity';
 import { absenceRequestStatusLabel } from '../training-absence-requests/absence-request-status';
 import { TrainingAbsenceRequestCoach } from '../training-absence-requests/entities/training-absence-request-coach.entity';
 import { TrainingAbsenceRequest } from '../training-absence-requests/entities/training-absence-request.entity';
-import { User } from '../users/entities/user.entity';
 import { PENDING_STATUS } from './absence-request-review.constants';
-import { AdminAbsenceRequestFiltersDto, TeacherAbsenceRequestFiltersDto } from './dto/absence-request-filters.dto';
+import { AdminAbsenceRequestFiltersDto } from './dto/absence-request-filters.dto';
 
 type Query = SelectQueryBuilder<TrainingAbsenceRequest>;
 
 export type ReviewedAbsenceRequest = ReturnType<typeof toResponse>;
 
-// Solo se exponen datos de identificación del deportista. El modelo no almacena promedio
-// ni historial académico, y la respuesta tampoco debe incluirlos (HU16 CA3).
+// Del deportista solo se exponen datos de identificación; el modelo no almacena información académica.
 const toResponse = (request: TrainingAbsenceRequest, coaches: { fullName: string; email: string }[], officialCallup: boolean) => ({
   id: request.id,
   status: request.status,
@@ -56,7 +54,6 @@ export class AbsenceRequestReviewService {
     @InjectRepository(TrainingAbsenceRequest) private readonly requests: Repository<TrainingAbsenceRequest>,
     @InjectRepository(TrainingAbsenceRequestCoach) private readonly requestCoaches: Repository<TrainingAbsenceRequestCoach>,
     @InjectRepository(CompetitionCallup) private readonly callups: Repository<CompetitionCallup>,
-    @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
   private baseQuery(): Query {
@@ -67,15 +64,17 @@ export class AbsenceRequestReviewService {
       .innerJoinAndSelect('competition.team', 'team');
   }
 
-  // Las solicitudes pendientes van primero; dentro de cada grupo, la competencia más próxima.
+  // HU16 CA3: primero las pendientes, desde el entrenamiento más próximo; después las demás,
+  // de la más reciente a la más antigua.
   private orderByPriority(query: Query): Query {
     return query
       .addSelect('CASE WHEN request.status = :pendingStatus THEN 0 ELSE 1 END', 'pending_rank')
+      .addSelect('CASE WHEN request.status = :pendingStatus THEN request.trainingDate END', 'pending_training_date')
       .setParameter('pendingStatus', PENDING_STATUS)
       .orderBy('pending_rank', 'ASC')
-      .addOrderBy('competition.startDate', 'ASC')
-      .addOrderBy('competition.startTime', 'ASC')
-      .addOrderBy('request.createdAt', 'DESC');
+      .addOrderBy('pending_training_date', 'ASC')
+      .addOrderBy('request.trainingDate', 'DESC')
+      .addOrderBy('request.startTime', 'ASC');
   }
 
   // Completa entrenadores y convocatoria en dos consultas para todo el lote, no una por solicitud.
@@ -101,38 +100,23 @@ export class AbsenceRequestReviewService {
     ));
   }
 
-  // El profesor se identifica por su correo institucional, que es el que registra el deportista en la solicitud.
-  private async teacherEmail(userId: string) {
-    const user = await this.users.findOne({ where: { id: userId, isActive: true } });
-    if (!user) throw new ForbiddenException('No tienes acceso a las solicitudes.');
-    return user.email.toLowerCase();
+  // HU16 CA1: HU11 asigna cada solicitud a los entrenadores de la disciplina del deportista
+  // (training_absence_request_coaches); el entrenador solo ve las que tiene asignadas.
+  private forCoach(query: Query, coachId: string) {
+    return query.innerJoin(
+      TrainingAbsenceRequestCoach,
+      'assignment',
+      'assignment.requestId = request.id AND assignment.coachId = :coachId',
+      { coachId },
+    );
   }
 
-  private forTeacher(query: Query, email: string) {
-    return query.where('LOWER(request.teacherEmail) = :teacherEmail', { teacherEmail: email });
+  async findForCoach(coachId: string) {
+    return this.withDetails(await this.orderByPriority(this.forCoach(this.baseQuery(), coachId)).getMany());
   }
 
-  async findForTeacher(userId: string, filters: TeacherAbsenceRequestFiltersDto) {
-    const query = this.forTeacher(this.baseQuery(), await this.teacherEmail(userId));
-    if (filters.course) query.andWhere('request.subjectName = :course', { course: filters.course });
-    if (filters.status) query.andWhere('request.status = :status', { status: filters.status });
-    if (filters.date) query.andWhere('request.trainingDate = :date', { date: filters.date });
-    return this.withDetails(await this.orderByPriority(query).getMany());
-  }
-
-  async findTeacherCourses(userId: string) {
-    const rows = await this.requests.createQueryBuilder('request')
-      .select('DISTINCT request.subjectName', 'course')
-      .where('LOWER(request.teacherEmail) = :teacherEmail', { teacherEmail: await this.teacherEmail(userId) })
-      .orderBy('course', 'ASC')
-      .getRawMany<{ course: string }>();
-    return rows.map(row => row.course);
-  }
-
-  async findOneForTeacher(userId: string, id: string) {
-    const request = await this.forTeacher(this.baseQuery(), await this.teacherEmail(userId))
-      .andWhere('request.id = :id', { id })
-      .getOne();
+  async findOneForCoach(coachId: string, id: string) {
+    const request = await this.forCoach(this.baseQuery(), coachId).where('request.id = :id', { id }).getOne();
     if (!request) throw new NotFoundException('Solicitud no encontrada.');
     return (await this.withDetails([request]))[0];
   }
@@ -142,6 +126,15 @@ export class AbsenceRequestReviewService {
     if (filters.athleteId) query.andWhere('athlete.id = :athleteId', { athleteId: filters.athleteId });
     if (filters.competitionId) query.andWhere('competition.id = :competitionId', { competitionId: filters.competitionId });
     if (filters.teacherEmail) query.andWhere('LOWER(request.teacherEmail) = :teacherEmail', { teacherEmail: filters.teacherEmail.toLowerCase() });
+    // Entrenadores a los que HU11 asignó la solicitud.
+    if (filters.coachId) {
+      query.andWhere(qb => `EXISTS ${qb.subQuery()
+        .select('1')
+        .from(TrainingAbsenceRequestCoach, 'assignment')
+        .where('assignment.requestId = request.id')
+        .andWhere('assignment.coachId = :coachId')
+        .getQuery()}`, { coachId: filters.coachId });
+    }
     if (filters.status) query.andWhere('request.status = :status', { status: filters.status });
     if (filters.from) query.andWhere('request.trainingDate >= :from', { from: filters.from });
     if (filters.to) query.andWhere('request.trainingDate <= :to', { to: filters.to });
@@ -164,6 +157,9 @@ export class AbsenceRequestReviewService {
   // Opciones de los filtros de HU20, tomadas de las solicitudes existentes.
   async findAdminFilterOptions() {
     const requests = await this.baseQuery().getMany();
+    const assignments = requests.length
+      ? await this.requestCoaches.find({ where: { requestId: In(requests.map(r => r.id)) }, relations: { coach: true } })
+      : [];
     const unique = <T extends { id: string }>(items: T[]) =>
       [...new Map(items.map(item => [item.id, item])).values()];
     const byLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label, 'es');
@@ -173,6 +169,7 @@ export class AbsenceRequestReviewService {
       athletes: unique(requests.map(r => ({ id: r.athlete.id, label: r.athlete.user.fullName }))).sort(byLabel),
       competitions: unique(requests.map(r => ({ id: r.competition.id, label: r.competition.name }))).sort(byLabel),
       teachers: unique(requests.map(r => ({ id: r.teacherEmail.toLowerCase(), label: `${r.teacherName} (${r.teacherEmail.toLowerCase()})` }))).sort(byLabel),
+      coaches: unique(assignments.map(a => ({ id: a.coachId, label: a.coach.fullName }))).sort(byLabel),
     };
   }
 }

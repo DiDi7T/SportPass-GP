@@ -31,12 +31,6 @@ const copy: Record<Role, { title: string; description: string; icon: string }> =
         "Consulta los usuarios y administra los roles y permisos de la plataforma.",
       icon: "✳",
     },
-    professor: {
-      title: "Revisa las solicitudes de tus cursos",
-      description:
-        "Consulta en un solo lugar los avisos de ausencia de los deportistas de tus cursos.",
-      icon: "✎",
-    },
   };
 
 export default function RoleHome({ role }: { role: Role }) {
