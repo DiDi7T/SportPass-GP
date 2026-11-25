@@ -25,16 +25,6 @@ export default function RoleNavbar({
         Torneos
       </Link>
 
-      {/* HU16: bandeja de solicitudes del profesor */}
-      {role === "professor" && (
-        <Link
-          className="role-menu-placeholder role-menu-link"
-          href="/profesor/solicitudes"
-        >
-          Solicitudes
-        </Link>
-      )}
-
       {/* Exclusivo para entrenadores */}
       {role === "coach" && (
         <Link
@@ -97,6 +87,12 @@ export default function RoleNavbar({
       {role === "coach" && (
         <Link className="role-menu-placeholder role-menu-link" href="/asistencia">
           Asistencia
+        </Link>
+      )}
+      {/* HU16: bandeja de solicitudes de ausencia de la disciplina. */}
+      {role === "coach" && (
+        <Link className="role-menu-placeholder role-menu-link" href="/coach/solicitudes">
+          Solicitudes
         </Link>
       )}
     </>

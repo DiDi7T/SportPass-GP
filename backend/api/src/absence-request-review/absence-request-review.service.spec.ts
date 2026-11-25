@@ -1,9 +1,10 @@
 // Session debe cargarse antes que User para evitar el ciclo de imports entre ambas entidades.
 import '../auth/entities/session.entity';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { jest } from '@jest/globals';
 import ExcelJS from 'exceljs';
 import { buildAbsenceRequestsWorkbook } from './absence-request-export';
+import { TrainingAbsenceRequestCoach } from '../training-absence-requests/entities/training-absence-request-coach.entity';
 import { AbsenceRequestReviewService } from './absence-request-review.service';
 
 // Query builder encadenable que registra cada llamada para verificar filtros y orden.
@@ -17,7 +18,7 @@ function queryBuilder(result: { many?: unknown[]; one?: unknown; raw?: unknown[]
   builder.getOne = async () => result.one ?? null;
   builder.getRawMany = async () => result.raw ?? [];
   builder.calls = calls;
-  return builder;
+  return builder as { calls: [string, ...unknown[]][] } & Record<string, any>;
 }
 
 const request = (overrides: Record<string, unknown> = {}) => ({
@@ -45,68 +46,63 @@ describe('AbsenceRequestReviewService', () => {
   const requests: any = { createQueryBuilder: jest.fn() };
   const requestCoaches: any = { find: jest.fn() };
   const callups: any = { createQueryBuilder: jest.fn() };
-  const users: any = { findOne: jest.fn() };
   let service: AbsenceRequestReviewService;
   let main: ReturnType<typeof queryBuilder>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AbsenceRequestReviewService(requests, requestCoaches, callups, users);
+    service = new AbsenceRequestReviewService(requests, requestCoaches, callups);
     main = queryBuilder({ many: [request()], one: request() });
     requests.createQueryBuilder.mockReturnValue(main);
-    users.findOne.mockResolvedValue({ id: 'teacher-1', email: 'Docente.Demo2@icesi.edu.co' });
-    requestCoaches.find.mockResolvedValue([{ requestId: 'request-1', coach: { fullName: 'Camilo Entrenador', email: 'coach.demo@icesi.edu.co' } }]);
+    requestCoaches.find.mockResolvedValue([{ requestId: 'request-1', coachId: 'coach-1', coach: { fullName: 'Camilo Entrenador', email: 'coach.demo@icesi.edu.co' } }]);
     callups.createQueryBuilder.mockReturnValue(queryBuilder({ many: [{ athlete: { id: 'athlete-1' }, competition: { id: 'competition-1' } }] }));
   });
 
-  describe('HU16 · bandeja del profesor', () => {
-    it('CA1: limita las solicitudes al correo del profesor autenticado', async () => {
-      await service.findForTeacher('teacher-1', {});
-      expect(main.calls).toContainEqual(['where', 'LOWER(request.teacherEmail) = :teacherEmail', { teacherEmail: 'docente.demo2@icesi.edu.co' }]);
-    });
-
-    it('CA1: ordena primero las pendientes y luego por la competencia más próxima', async () => {
-      await service.findForTeacher('teacher-1', {});
-      const order = main.calls.filter(([method]) => method === 'orderBy' || method === 'addOrderBy');
-      expect(main.calls).toContainEqual(['setParameter', 'pendingStatus', 'pending_coach_approval']);
-      expect(order.slice(0, 3)).toEqual([
-        ['orderBy', 'pending_rank', 'ASC'],
-        ['addOrderBy', 'competition.startDate', 'ASC'],
-        ['addOrderBy', 'competition.startTime', 'ASC'],
+  describe('HU16 · bandeja del entrenador', () => {
+    it('CA1: limita la bandeja a las solicitudes asignadas al entrenador autenticado', async () => {
+      await service.findForCoach('coach-1');
+      expect(main.calls).toContainEqual([
+        'innerJoin', TrainingAbsenceRequestCoach, 'assignment',
+        'assignment.requestId = request.id AND assignment.coachId = :coachId', { coachId: 'coach-1' },
       ]);
     });
 
-    it('CA2: aplica los filtros de curso, estado y fecha', async () => {
-      await service.findForTeacher('teacher-1', { course: 'Comunicación escrita', status: 'approved_by_coach', date: '2026-11-27' });
-      expect(main.calls).toEqual(expect.arrayContaining([
-        ['andWhere', 'request.subjectName = :course', { course: 'Comunicación escrita' }],
-        ['andWhere', 'request.status = :status', { status: 'approved_by_coach' }],
-        ['andWhere', 'request.trainingDate = :date', { date: '2026-11-27' }],
-      ]));
+    it('CA2: incluye deportista, competencia, entrenamiento, asignatura y correo del docente', async () => {
+      const [result] = await service.findForCoach('coach-1');
+      expect(result).toMatchObject({
+        athlete: { fullName: 'Valentina Deportista' },
+        competition: { name: 'Copa Regional' },
+        trainingDate: '2026-11-27',
+        startTime: '08:00',
+        endTime: '10:00',
+        subjectName: 'Comunicación escrita',
+        teacherEmail: 'docente.demo2@icesi.edu.co',
+      });
     });
 
-    it('CA3: indica la convocatoria oficial y el entrenador, sin datos académicos', async () => {
-      const [result] = await service.findForTeacher('teacher-1', {});
-      expect(result.officialCallup).toBe(true);
-      expect(result.coaches).toEqual([{ fullName: 'Camilo Entrenador', email: 'coach.demo@icesi.edu.co' }]);
-      expect(Object.keys(result.athlete).sort()).toEqual(['email', 'fullName', 'id', 'studentCode']);
-      expect(JSON.stringify(result)).not.toMatch(/average|promedio|gpa|history|historial/i);
+    it('CA3: ordena primero las pendientes por la fecha de entrenamiento más próxima', async () => {
+      await service.findForCoach('coach-1');
+      const order = main.calls.filter(([method]) => method === 'orderBy' || method === 'addOrderBy');
+      expect(main.calls).toContainEqual(['setParameter', 'pendingStatus', 'pending_coach_approval']);
+      expect(order).toEqual([
+        ['orderBy', 'pending_rank', 'ASC'],
+        ['addOrderBy', 'pending_training_date', 'ASC'],
+        ['addOrderBy', 'request.trainingDate', 'DESC'],
+        ['addOrderBy', 'request.startTime', 'ASC'],
+      ]);
     });
 
-    it('CA3: marca la solicitud cuando el deportista no tiene convocatoria registrada', async () => {
+    it('indica si el deportista está convocado oficialmente a la competencia', async () => {
+      const [withCallup] = await service.findForCoach('coach-1');
+      expect(withCallup.officialCallup).toBe(true);
       callups.createQueryBuilder.mockReturnValue(queryBuilder({ many: [] }));
-      const [result] = await service.findForTeacher('teacher-1', {});
-      expect(result.officialCallup).toBe(false);
+      const [withoutCallup] = await service.findForCoach('coach-1');
+      expect(withoutCallup.officialCallup).toBe(false);
     });
 
-    it('no permite abrir una solicitud dirigida a otro profesor', async () => {
+    it('no permite abrir una solicitud asignada a otro entrenador', async () => {
       requests.createQueryBuilder.mockReturnValue(queryBuilder({ one: null }));
-      await expect(service.findOneForTeacher('teacher-1', 'request-2')).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('rechaza a un usuario inactivo o inexistente', async () => {
-      users.findOne.mockResolvedValue(null);
-      await expect(service.findForTeacher('teacher-1', {})).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.findOneForCoach('coach-2', 'request-1')).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -114,7 +110,7 @@ describe('AbsenceRequestReviewService', () => {
     it('CA1: aplica todos los filtros seleccionados', async () => {
       await service.findForAdmin({
         teamId: 'team-1', athleteId: 'athlete-1', competitionId: 'competition-1', teacherEmail: 'Docente.Demo2@icesi.edu.co',
-        status: 'rejected_by_coach', from: '2026-11-01', to: '2026-11-30',
+        status: 'rejected_by_coach', from: '2026-11-01', to: '2026-11-30', coachId: 'coach-1',
       });
       expect(main.calls).toEqual(expect.arrayContaining([
         ['andWhere', 'team.id = :teamId', { teamId: 'team-1' }],
@@ -125,6 +121,7 @@ describe('AbsenceRequestReviewService', () => {
         ['andWhere', 'request.trainingDate >= :from', { from: '2026-11-01' }],
         ['andWhere', 'request.trainingDate <= :to', { to: '2026-11-30' }],
       ]));
+      expect(main.calls).toContainEqual(['andWhere', expect.any(Function), { coachId: 'coach-1' }]);
     });
 
     it('CA1: sin filtros devuelve todas las solicitudes', async () => {
@@ -142,6 +139,7 @@ describe('AbsenceRequestReviewService', () => {
       expect(sheet.getRow(1).getCell(1).value).toBe('Fecha de solicitud');
       expect(sheet.getRow(2).getCell(3).value).toBe('Valentina Deportista');
       expect(sheet.getRow(2).getCell(2).value).toBe('Pendiente');
+      expect(sheet.getRow(1).getCell(12).value).toBe('Fecha del entrenamiento');
     });
 
     it('arma las opciones de filtro sin duplicados', async () => {
@@ -149,6 +147,7 @@ describe('AbsenceRequestReviewService', () => {
       const options = await service.findAdminFilterOptions();
       expect(options.teams).toEqual([{ id: 'team-1', label: 'Selección Voleibol Femenino' }]);
       expect(options.teachers).toEqual([{ id: 'docente.demo2@icesi.edu.co', label: 'Docente Demo Dos (docente.demo2@icesi.edu.co)' }]);
+      expect(options.coaches).toEqual([{ id: 'coach-1', label: 'Camilo Entrenador' }]);
     });
   });
 });

@@ -37,13 +37,12 @@ export type ReviewedAbsenceRequest = {
   coaches: { fullName: string; email: string }[];
 };
 
-export type TeacherFilters = { course: string; status: string; date: string };
-
 export type AdminFilters = {
   teamId: string;
   athleteId: string;
   competitionId: string;
   teacherEmail: string;
+  coachId: string;
   status: string;
   from: string;
   to: string;
@@ -56,6 +55,7 @@ export type AdminFilterOptions = {
   athletes: FilterOption[];
   competitions: FilterOption[];
   teachers: FilterOption[];
+  coaches: FilterOption[];
 };
 
 // Solo se envían los filtros con valor para no restringir la consulta con campos vacíos.
@@ -64,13 +64,10 @@ export function toQuery(filters: Record<string, string>) {
   return params.size ? `?${params}` : "";
 }
 
-export const fetchTeacherRequests = (filters: TeacherFilters) =>
-  apiFetch<ReviewedAbsenceRequest[]>(`/teacher/absence-requests${toQuery(filters)}`);
+export const fetchCoachRequests = () => apiFetch<ReviewedAbsenceRequest[]>("/coach/absence-requests");
 
-export const fetchTeacherCourses = () => apiFetch<string[]>("/teacher/absence-requests/courses");
-
-export const fetchTeacherRequest = (id: string) =>
-  apiFetch<ReviewedAbsenceRequest>(`/teacher/absence-requests/${id}`);
+export const fetchCoachRequest = (id: string) =>
+  apiFetch<ReviewedAbsenceRequest>(`/coach/absence-requests/${id}`);
 
 export const fetchAdminRequests = (filters: AdminFilters) =>
   apiFetch<ReviewedAbsenceRequest[]>(`/admin/absence-requests${toQuery(filters)}`);

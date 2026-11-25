@@ -1,25 +1,17 @@
-// Datos mínimos para probar HU16 (bandeja del profesor) y HU20 (historial general).
+// Permiso necesario para HU20 (historial general de solicitudes).
 // Es idempotente: se puede ejecutar varias veces sin duplicar datos.
-// - Crea el rol `professor` con el permiso `absence-requests:review`.
-// - Asigna `absence-requests:history` al rol `admin`.
-// - Crea un usuario profesor por cada docente demo de `academic_courses` (HU10), con la
-//   contraseña de prueba DEMO_PASSWORD. Una cuenta existente no cambia de contraseña.
+// - Crea el permiso `absence-requests:history` y lo asigna al rol `admin`.
+// HU16 (bandeja del entrenador) usa el permiso `permissions:manage`, que el rol `coach` ya tiene.
 // Requisito: haber iniciado el backend al menos una vez para que TypeORM cree las tablas.
 // Uso: yarn seed:absence-review
 require('dotenv').config({ quiet: true });
-const bcrypt = require('bcrypt');
 const { Client } = require('pg');
 
-const DEMO_PASSWORD = 'SportPass-Docente-2026!';
-const DEMO_TEACHERS = [
-  { email: 'docente.demo1@icesi.edu.co', fullName: 'Docente Demo Uno' },
-  { email: 'docente.demo2@icesi.edu.co', fullName: 'Docente Demo Dos' },
-  { email: 'docente.demo3@icesi.edu.co', fullName: 'Docente Demo Tres' },
-];
-const PERMISSIONS = [
-  { code: 'absence-requests:review', description: 'Revisar las solicitudes de ausencia de los cursos que dicta', role: 'professor' },
-  { code: 'absence-requests:history', description: 'Consultar y exportar el historial general de solicitudes', role: 'admin' },
-];
+const HISTORY_PERMISSION = {
+  code: 'absence-requests:history',
+  description: 'Consultar y exportar el historial general de solicitudes',
+  role: 'admin',
+};
 
 async function main() {
   const client = new Client({
@@ -32,43 +24,23 @@ async function main() {
   });
   await client.connect();
   try {
-    const { rows: [tables] } = await client.query(`SELECT to_regclass('public.training_absence_requests') AS requests`);
-    if (!tables.requests) throw new Error('Falta la tabla training_absence_requests. Inicia el backend una vez (yarn start:dev) y vuelve a ejecutar el seed.');
+    const { rows: [tables] } = await client.query(`SELECT to_regclass('public.permissions') AS permissions`);
+    if (!tables.permissions) throw new Error('Falta la tabla permissions. Inicia el backend una vez (yarn start:dev) y vuelve a ejecutar el seed.');
 
-    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
     await client.query('BEGIN');
-    await client.query(
-      `INSERT INTO roles (name, description) VALUES ('professor', 'Profesor de la universidad')
-       ON CONFLICT (name) DO NOTHING`,
+    const { rows: [saved] } = await client.query(
+      `INSERT INTO permissions (code, description) VALUES ($1, $2)
+       ON CONFLICT (code) DO UPDATE SET description = EXCLUDED.description RETURNING id`,
+      [HISTORY_PERMISSION.code, HISTORY_PERMISSION.description],
     );
-    for (const permission of PERMISSIONS) {
-      const { rows: [saved] } = await client.query(
-        `INSERT INTO permissions (code, description) VALUES ($1, $2)
-         ON CONFLICT (code) DO UPDATE SET description = EXCLUDED.description RETURNING id`,
-        [permission.code, permission.description],
-      );
-      await client.query(
-        `INSERT INTO role_permissions (role_id, permission_id)
-         SELECT r.id, $1 FROM roles r WHERE r.name = $2
-         ON CONFLICT DO NOTHING`,
-        [saved.id, permission.role],
-      );
-    }
-    for (const teacher of DEMO_TEACHERS) {
-      const { rows: [user] } = await client.query(
-        `INSERT INTO users (email, full_name, password_hash) VALUES ($1, $2, $3)
-         ON CONFLICT (email) DO UPDATE SET full_name = users.full_name RETURNING id`,
-        [teacher.email, teacher.fullName, passwordHash],
-      );
-      await client.query(
-        `INSERT INTO user_roles (user_id, role_id)
-         SELECT $1, r.id FROM roles r WHERE r.name = 'professor'
-         ON CONFLICT DO NOTHING`,
-        [user.id],
-      );
-    }
+    await client.query(
+      `INSERT INTO role_permissions (role_id, permission_id)
+       SELECT r.id, $1 FROM roles r WHERE r.name = $2
+       ON CONFLICT DO NOTHING`,
+      [saved.id, HISTORY_PERMISSION.role],
+    );
     await client.query('COMMIT');
-    console.log(`Listo: rol professor con ${DEMO_TEACHERS.length} profesores demo y permisos de HU16/HU20 asignados.`);
+    console.log('Listo: permiso absence-requests:history asignado al rol admin.');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     throw error;
