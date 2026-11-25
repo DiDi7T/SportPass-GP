@@ -55,7 +55,9 @@ function refreshAccessToken() {
   return pendingRefresh;
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+// Envía la petición con el token vigente, renueva la sesión una vez ante un 401 y
+// convierte cualquier respuesta no exitosa en ApiError.
+async function authorizedFetch(path: string, init: RequestInit, retry: boolean): Promise<Response> {
   const headers = new Headers(init.headers);
   if (
   init.body &&
@@ -68,13 +70,30 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const response = await fetch(`${API_URL}${path}`, { ...init, headers, credentials: "include" });
-  if (response.status === 401 && retry && (await refreshAccessToken())) return apiFetch<T>(path, init, false);
+  if (response.status === 401 && retry && (await refreshAccessToken())) return authorizedFetch(path, init, false);
   if (!response.ok) {
     if (response.status === 401) setToken(null);
     const body = await response.json().catch(() => null);
     throw new ApiError(errorMessage(body), response.status, body);
   }
+  return response;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const response = await authorizedFetch(path, init, retry);
   return response.json() as Promise<T>;
+}
+
+// Descarga un archivo protegido (p. ej. la exportación a Excel de HU20). El nombre se define en
+// el cliente porque CORS no expone Content-Disposition a otro origen sin configuración adicional.
+export async function apiDownload(path: string, fileName: string) {
+  const response = await authorizedFetch(path, {}, true);
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export type SessionUser = { id: string; email: string; fullName: string; roles: string[]; permissions: string[] };

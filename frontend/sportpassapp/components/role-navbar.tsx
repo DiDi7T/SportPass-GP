@@ -14,7 +14,7 @@ export default function RoleNavbar({
   onLogout,
 }: RoleNavbarProps) {
   // Competencias: entrenadores y administradores.
-  const managesCompetitions = role !== "athlete";
+  const managesCompetitions = role === "coach" || role === "admin";
 
   const renderLinks = () => (
     <>
@@ -24,6 +24,16 @@ export default function RoleNavbar({
       <Link className="role-menu-placeholder role-menu-link" href="/torneos">
         Torneos
       </Link>
+
+      {/* HU16: bandeja de solicitudes del profesor */}
+      {role === "professor" && (
+        <Link
+          className="role-menu-placeholder role-menu-link"
+          href="/profesor/solicitudes"
+        >
+          Solicitudes
+        </Link>
+      )}
 
       {/* Exclusivo para entrenadores */}
       {role === "coach" && (
@@ -60,6 +70,14 @@ export default function RoleNavbar({
             href="/admin/management/teams"
           >
             Equipos
+          </Link>
+
+          {/* HU20: historial general de solicitudes */}
+          <Link
+            className="role-menu-placeholder role-menu-link"
+            href="/admin/solicitudes"
+          >
+            Solicitudes
           </Link>
 
           <Link className="role-settings-link" href="/admin/management">
