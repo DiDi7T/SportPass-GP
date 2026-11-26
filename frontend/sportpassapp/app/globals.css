@@ -936,6 +936,60 @@ button {
   border-radius: 10px;
   background: #fbfbff;
 }
+.training-requests-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.training-request-pdf-button--compact {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+.training-request-cancel-button {
+  padding: 7px 2px;
+  border: 0;
+  background: transparent;
+  color: #a12828;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.training-request-pdf-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 18px;
+}
+.training-request-pdf-actions .admin-error {
+  margin: 0 auto 0 0;
+}
+.training-request-pdf-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid var(--icesi);
+  border-radius: 8px;
+  background: var(--icesi);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.18s, transform 0.18s;
+}
+.training-request-pdf-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--icesi-dark);
+}
+.training-request-pdf-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .training-request-detail h3 {
   margin: 0 0 16px;
   font-size: 20px;
@@ -3465,6 +3519,17 @@ button {
 .notification-request-callout.is-approved > span {
   background: #def4e6;
 }
+.notification-request-approved-copy {
+  min-width: 0;
+}
+.notification-request-approved-copy .admin-error {
+  margin: 8px 0 0;
+}
+.notification-request-callout.is-approved .notification-request-download-button {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: auto;
+}
 .notification-request-callout.is-rejected {
   border-color: #f0d1cb;
   background: #fff6f4;
@@ -3565,6 +3630,12 @@ button {
     align-items: flex-start;
     flex-direction: column;
     gap: 14px;
+  }
+  .notification-request-callout.is-approved {
+    flex-wrap: wrap;
+  }
+  .notification-request-callout.is-approved .notification-request-download-button {
+    margin-left: 42px;
   }
 }
 @media (max-width: 430px) {

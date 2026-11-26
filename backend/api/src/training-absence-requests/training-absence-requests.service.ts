@@ -19,6 +19,7 @@ import {
   TrainingAbsenceRequest,
 } from './entities/training-absence-request.entity';
 import { absenceRequestStatusLabel } from './absence-request-status';
+import { buildTrainingAbsencePermitPdf } from './training-absence-request-pdf';
 
 const isRealDate = (value: string) => {
   const [year, month, day] = value.split('-').map(Number);
@@ -101,6 +102,40 @@ export class TrainingAbsenceRequestsService {
     });
     if (!request) throw new NotFoundException('Solicitud no encontrada.');
     return this.toRequestResponse(request);
+  }
+
+  // HU15: genera una constancia solo para solicitudes aprobadas del deportista autenticado.
+  async createPermitPdfMine(userId: string, requestId: string) {
+    const athlete = await this.findActiveAthlete(userId);
+    const request = await this.dataSource.getRepository(TrainingAbsenceRequest).findOne({
+      where: { id: requestId, athlete: { id: athlete.id } },
+      relations: {
+        athlete: { user: true },
+        competition: { team: true },
+        respondedByCoach: true,
+      },
+    });
+    if (!request) throw new NotFoundException('Solicitud no encontrada.');
+    if (request.status !== 'approved_by_coach') {
+      throw new ConflictException('Solo puedes descargar constancias de solicitudes aprobadas por el entrenador.');
+    }
+    if (!request.respondedByCoach || !request.coachRespondedAt) {
+      throw new ConflictException('La solicitud no tiene registrada la trazabilidad del entrenador que la aprobó.');
+    }
+
+    return buildTrainingAbsencePermitPdf({
+      studentName: request.athlete.user.fullName,
+      studentCode: request.athlete.studentCode,
+      sport: request.competition.team.sport,
+      competitionName: request.competition.name,
+      trainingDate: request.trainingDate,
+      startTime: request.startTime.slice(0, 5),
+      endTime: request.endTime.slice(0, 5),
+      subjectName: request.subjectName,
+      teacherName: request.teacherName,
+      coachName: request.respondedByCoach.fullName,
+      approvedAt: request.coachRespondedAt,
+    });
   }
 
   // HU13: sólo el deportista dueño puede cancelar mientras la solicitud está pendiente.

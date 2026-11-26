@@ -145,6 +145,7 @@ export class AbsenceRequestReviewService {
       {
         status: decision === 'approve' ? 'approved_by_coach' : 'rejected_by_coach',
         coachRespondedAt: new Date(),
+        respondedByCoach: { id: coachId },
         rejectionComment: decision === 'reject' ? comment : null,
       },
     );

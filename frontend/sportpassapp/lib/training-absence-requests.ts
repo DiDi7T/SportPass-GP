@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiDownload, apiFetch } from './api';
 
 export type EligibleCompetition = {
   id: string;
@@ -59,6 +59,10 @@ export const fetchMyTrainingAbsenceRequests = () =>
 
 export const fetchMyTrainingAbsenceRequest = (id: string) =>
   apiFetch<MyTrainingAbsenceRequest>(`/me/training-absence-requests/${id}`);
+
+// HU15. El servidor valida titularidad y estado aprobado antes de entregar el PDF.
+export const downloadMyTrainingAbsenceRequestPdf = (id: string) =>
+  apiDownload(`/me/training-absence-requests/${id}/pdf`, `constancia-sportpass-${id}.pdf`);
 
 // HU13. Solo ejecuta la cancelación después de confirmar desde la interfaz.
 export const cancelTrainingAbsenceRequest = (id: string) =>

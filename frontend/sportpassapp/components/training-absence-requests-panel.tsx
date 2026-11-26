@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cancelTrainingAbsenceRequest,
+  downloadMyTrainingAbsenceRequestPdf,
   fetchMyTrainingAbsenceRequest,
   fetchMyTrainingAbsenceRequests,
   type MyTrainingAbsenceRequest,
@@ -38,6 +39,8 @@ export default function TrainingAbsenceRequestsPanel() {
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -123,6 +126,19 @@ export default function TrainingAbsenceRequestsPanel() {
     }
   }
 
+  async function downloadPermitPdf(id: string) {
+    setDownloadingPdfId(id);
+    setPdfError("");
+    try {
+      await downloadMyTrainingAbsenceRequestPdf(id);
+    } catch (err) {
+      handleAuthError(err);
+      setPdfError(err instanceof Error ? err.message : "No se pudo descargar la constancia.");
+    } finally {
+      setDownloadingPdfId(null);
+    }
+  }
+
   function closeRequests() {
     setIsOpen(false);
     setSelectedId(null);
@@ -168,6 +184,7 @@ export default function TrainingAbsenceRequestsPanel() {
           </header>
 
           {error && <p className="admin-error" role="alert">{error}</p>}
+          {pdfError && <p className="admin-error" role="alert">{pdfError}</p>}
           {loading && <p className="admin-loading">Cargando tus solicitudes…</p>}
           {!loading && requests?.length === 0 && (
             <p className="training-requests-empty">Aún no has registrado solicitudes de ausencia.</p>
@@ -199,21 +216,33 @@ export default function TrainingAbsenceRequestsPanel() {
                         </span>
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="training-request-detail-toggle"
-                          aria-expanded={selectedId === request.id}
-                          onClick={() => void toggleDetail(request.id)}
-                        >
-                          {selectedId === request.id ? "Ocultar" : "Ver detalles"}
-                        </button>
-                        {request.status === 'pending_coach_approval' && (
-                          <button type="button" disabled={cancellingId !== null}
-                            onClick={() => void cancelRequest(request.id)}
-                            className="ml-3 font-semibold text-red-700 hover:underline disabled:opacity-50">
-                            {cancellingId === request.id ? 'Cancelando…' : 'Cancelar solicitud'}
+                        <div className="training-requests-action-buttons">
+                          <button
+                            type="button"
+                            className="training-request-detail-toggle"
+                            aria-expanded={selectedId === request.id}
+                            onClick={() => void toggleDetail(request.id)}
+                          >
+                            {selectedId === request.id ? "Ocultar" : "Ver detalles"}
                           </button>
-                        )}
+                          {request.status === "approved_by_coach" && (
+                            <button
+                              type="button"
+                              className="btn-primary training-request-pdf-button training-request-pdf-button--compact"
+                              disabled={downloadingPdfId !== null}
+                              onClick={() => void downloadPermitPdf(request.id)}
+                            >
+                              {downloadingPdfId === request.id ? "Descargando…" : "Descargar PDF"}
+                            </button>
+                          )}
+                          {request.status === 'pending_coach_approval' && (
+                            <button type="button" disabled={cancellingId !== null}
+                              onClick={() => void cancelRequest(request.id)}
+                              className="training-request-cancel-button">
+                              {cancellingId === request.id ? 'Cancelando…' : 'Cancelar solicitud'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -256,6 +285,19 @@ export default function TrainingAbsenceRequestsPanel() {
                       </div>
                     )}
                   </dl>
+                  {detail.status === "approved_by_coach" && (
+                    <div className="training-request-pdf-actions">
+                      {pdfError && <p className="admin-error" role="alert">{pdfError}</p>}
+                      <button
+                        type="button"
+                        className="btn-primary training-request-pdf-button"
+                        disabled={downloadingPdfId === detail.id}
+                        onClick={() => void downloadPermitPdf(detail.id)}
+                      >
+                        {downloadingPdfId === detail.id ? "Generando PDF…" : "Descargar constancia PDF"}
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </section>
