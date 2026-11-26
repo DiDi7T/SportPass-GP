@@ -15,6 +15,10 @@ backend/api/migrations/
 backend/api/migrations/*
 !backend/api/migrations/004_hu11_training_absence_requests.sql
 !backend/api/migrations/005_hu12_training_absence_traceability.sql
+!backend/api/migrations/006_hu19_notifications.sql
+!backend/api/migrations/007_hu15_deciding_coach.sql
+!backend/api/migrations/008_hu19_notification_message.sql
+!backend/api/migrations/009_hu19_decision_trigger.sql
 
 # Build output and generated artifacts
 **/dist/
