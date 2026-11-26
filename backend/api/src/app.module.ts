@@ -17,7 +17,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { TrainingAbsenceRequestsModule } from './training-absence-requests/training-absence-requests.module';
 import { AbsenceRequestReviewModule } from './absence-request-review/absence-request-review.module';
 import { NotificationsModule } from './notifications/notifications.module';
-
+import { AbsenceAnalyticsModule } from './absence-analytics/absence-analytics.module';
 
 @Module({
   imports: [
@@ -49,7 +49,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
     AuthModule, UsersModule, RolesModule, TeamsModule, TeamCoachesModule, AthletesModule,
     TeamAthletesModule, RosterImportModule, CompetitionsModule, TournamentsModule, AttendanceModule,
-    TrainingAbsenceRequestsModule, AbsenceRequestReviewModule, NotificationsModule,
+    TrainingAbsenceRequestsModule, AbsenceRequestReviewModule, NotificationsModule,AbsenceAnalyticsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
