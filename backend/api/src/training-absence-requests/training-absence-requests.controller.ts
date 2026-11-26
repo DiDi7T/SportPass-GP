@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Req, StreamableFile, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Query, Req, StreamableFile, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { AccessGuard } from '../auth/guards/access.guard';
 import { CreateTrainingAbsenceRequestDto } from './dto/create-training-absence-request.dto';
+import { MyAbsenceRequestHistoryFiltersDto } from './dto/my-absence-request-history-filters.dto';
 import { TrainingAbsenceRequestsService } from './training-absence-requests.service';
 
 type AuthRequest = Request & { user: { sub: string } };
@@ -19,6 +20,12 @@ export class TrainingAbsenceRequestsController {
   @Get()
   findMine(@Req() request: AuthRequest) {
     return this.requests.findMine(request.user.sub);
+  }
+
+  // HU14: va antes de ':id' para que Nest no interprete "history" como un id.
+  @Get('history')
+  findHistory(@Req() request: AuthRequest, @Query() filters: MyAbsenceRequestHistoryFiltersDto) {
+    return this.requests.findHistory(request.user.sub, filters);
   }
 
   @Get(':id/pdf')

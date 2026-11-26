@@ -13,6 +13,7 @@ import { CompetitionCallup } from '../competitions/entities/competition-callup.e
 import { TeamCoach } from '../team-coaches/entities/team-coach.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateTrainingAbsenceRequestDto } from './dto/create-training-absence-request.dto';
+import { MyAbsenceRequestHistoryFiltersDto } from './dto/my-absence-request-history-filters.dto';
 import { TrainingAbsenceRequestCoach } from './entities/training-absence-request-coach.entity';
 import {
   PENDING_COACH_APPROVAL,
@@ -27,7 +28,10 @@ const isRealDate = (value: string) => {
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 };
 
-const competitionHasEnded = (competition: CompetitionCallup['competition'], now: Date) =>
+// La materia se busca por coincidencia parcial: % y _ escritos por el usuario se toman literales.
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, character => `\\${character}`);
+
+const competitionHasEnded =(competition: CompetitionCallup['competition'], now: Date) =>
   new Date(`${competition.endDate}T${competition.endTime.slice(0, 5)}:00-05:00`) <= now;
 
 const toEligibleCompetition = (competition: CompetitionCallup['competition']) => ({
@@ -91,6 +95,31 @@ export class TrainingAbsenceRequestsService {
       relations: { competition: { team: true } },
       order: { createdAt: 'DESC' },
     });
+    return requests.map(request => this.toRequestResponse(request));
+  }
+
+  // HU14: historial del deportista con filtros (CA1), del entrenamiento más reciente al más antiguo (CA2).
+  // Solo lectura: el historial no ofrece ninguna acción sobre las solicitudes.
+  async findHistory(userId: string, filters: MyAbsenceRequestHistoryFiltersDto = {}) {
+    if (filters.from && filters.to && filters.from > filters.to) {
+      throw new BadRequestException('La fecha inicial no puede ser posterior a la fecha final.');
+    }
+    const athlete = await this.findActiveAthlete(userId);
+    const query = this.dataSource.getRepository(TrainingAbsenceRequest).createQueryBuilder('request')
+      .innerJoin('request.athlete', 'athlete')
+      .innerJoinAndSelect('request.competition', 'competition')
+      .innerJoinAndSelect('competition.team', 'team')
+      .where('athlete.id = :athleteId', { athleteId: athlete.id });
+    if (filters.status) query.andWhere('request.status = :status', { status: filters.status });
+    if (filters.from) query.andWhere('request.trainingDate >= :from', { from: filters.from });
+    if (filters.to) query.andWhere('request.trainingDate <= :to', { to: filters.to });
+    const subject = filters.subject?.trim().toLowerCase();
+    if (subject) query.andWhere('LOWER(request.subjectName) LIKE :subject', { subject: `%${escapeLike(subject)}%` });
+    const requests = await query
+      .orderBy('request.trainingDate', 'DESC')
+      .addOrderBy('request.startTime', 'DESC')
+      .addOrderBy('request.createdAt', 'DESC')
+      .getMany();
     return requests.map(request => this.toRequestResponse(request));
   }
 
