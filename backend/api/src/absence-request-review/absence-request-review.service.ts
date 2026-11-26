@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CompetitionCallup } from '../competitions/entities/competition-callup.entity';
+import { TeacherApprovalEmailService } from '../teacher-notifications/teacher-approval-email.service';
 import { absenceRequestStatusLabel } from '../training-absence-requests/absence-request-status';
 import { TrainingAbsenceRequestCoach } from '../training-absence-requests/entities/training-absence-request-coach.entity';
 import { TrainingAbsenceRequest } from '../training-absence-requests/entities/training-absence-request.entity';
@@ -27,6 +28,9 @@ const toResponse = (request: TrainingAbsenceRequest, coaches: { fullName: string
   coachRespondedAt: request.coachRespondedAt,
   rejectionComment: request.rejectionComment,
   teacherEmailSentAt: request.teacherEmailSentAt,
+  // HU18 CA4: resultado del último intento de envío del correo al docente.
+  teacherEmailStatus: request.teacherEmailStatus,
+  teacherEmailError: request.teacherEmailError,
   athlete: {
     id: request.athlete.id,
     fullName: request.athlete.user.fullName,
@@ -54,6 +58,7 @@ export class AbsenceRequestReviewService {
     @InjectRepository(TrainingAbsenceRequest) private readonly requests: Repository<TrainingAbsenceRequest>,
     @InjectRepository(TrainingAbsenceRequestCoach) private readonly requestCoaches: Repository<TrainingAbsenceRequestCoach>,
     @InjectRepository(CompetitionCallup) private readonly callups: Repository<CompetitionCallup>,
+    private readonly teacherEmails: TeacherApprovalEmailService,
   ) {}
 
   private baseQuery(): Query {
@@ -152,8 +157,9 @@ export class AbsenceRequestReviewService {
     if (updated.affected !== 1) {
       throw new ConflictException('Otro usuario ya procesó esta solicitud.');
     }
-    // La integración de correo HU18/HU19 se hace desde la transición a aprobada.
-    // Aquí NO marcamos teacher_email_sent_at ni simulamos el envío.
+    // HU18: al aprobar se envía el correo al docente. Si falla, la solicitud sigue aprobada y el
+    // error queda registrado; teacher_email_sent_at solo se llena cuando el envío fue exitoso.
+    if (decision === 'approve') await this.teacherEmails.notifyTeacherOfApproval(id);
     return this.findOneForCoach(coachId, id);
   }
 
