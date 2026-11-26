@@ -46,12 +46,13 @@ describe('AbsenceRequestReviewService', () => {
   const requests: any = { createQueryBuilder: jest.fn(), update: jest.fn() };
   const requestCoaches: any = { find: jest.fn() };
   const callups: any = { createQueryBuilder: jest.fn() };
+  const teacherEmails: any = { notifyTeacherOfApproval: jest.fn() };
   let service: AbsenceRequestReviewService;
   let main: ReturnType<typeof queryBuilder>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AbsenceRequestReviewService(requests, requestCoaches, callups);
+    service = new AbsenceRequestReviewService(requests, requestCoaches, callups, teacherEmails);
     main = queryBuilder({ many: [request()], one: request() });
     requests.createQueryBuilder.mockReturnValue(main);
     requests.update.mockResolvedValue({ affected: 1 });
@@ -134,6 +135,20 @@ describe('AbsenceRequestReviewService', () => {
       requests.createQueryBuilder.mockReturnValue(queryBuilder({ one: request({ status: 'cancelled' }) }));
       await expect(service.decideForCoach('coach-1', 'request-1', 'approve')).rejects.toThrow('ya fue procesada');
       expect(requests.update).not.toHaveBeenCalled();
+    });
+
+    it('HU18 CA1: al aprobar dispara el correo al docente, y nunca al rechazar', async () => {
+      await service.decideForCoach('coach-1', 'request-1', 'approve');
+      expect(teacherEmails.notifyTeacherOfApproval).toHaveBeenCalledWith('request-1');
+      teacherEmails.notifyTeacherOfApproval.mockClear();
+      await service.decideForCoach('coach-1', 'request-1', 'reject', 'Entrenamiento cancelado');
+      expect(teacherEmails.notifyTeacherOfApproval).not.toHaveBeenCalled();
+    });
+
+    it('HU18: no envía el correo si la aprobación no se pudo guardar', async () => {
+      requests.update.mockResolvedValue({ affected: 0 });
+      await expect(service.decideForCoach('coach-1', 'request-1', 'approve')).rejects.toThrow('Otro usuario');
+      expect(teacherEmails.notifyTeacherOfApproval).not.toHaveBeenCalled();
     });
   });
 

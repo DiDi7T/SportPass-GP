@@ -62,6 +62,16 @@ export class TrainingAbsenceRequest {
   @Column({ name: 'teacher_email_sent_at', type: 'timestamptz', nullable: true })
   teacherEmailSentAt!: Date | null;
 
+  // HU18 CA4: resultado del último intento de envío del correo al docente (migración 010).
+  @Column({ name: 'teacher_email_status', type: 'varchar', length: 20, nullable: true })
+  teacherEmailStatus!: 'sent' | 'failed' | null;
+
+  @Column({ name: 'teacher_email_error', type: 'varchar', length: 1000, nullable: true })
+  teacherEmailError!: string | null;
+
+  @Column({ name: 'teacher_email_attempted_at', type: 'timestamptz', nullable: true })
+  teacherEmailAttemptedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

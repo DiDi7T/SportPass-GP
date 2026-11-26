@@ -16,6 +16,34 @@ export type TrainingAbsencePermitPdfData = {
   approvedAt: Date;
 };
 
+// Datos de la constancia a partir de una solicitud aprobada con athlete.user, competition.team y
+// respondedByCoach cargados. Lo usan la descarga (HU15) y el adjunto del correo al docente (HU18).
+export type ApprovedRequestForPdf = {
+  athlete: { studentCode: string; user: { fullName: string } };
+  competition: { name: string; team: { sport: string } };
+  trainingDate: string;
+  startTime: string;
+  endTime: string;
+  subjectName: string;
+  teacherName: string;
+  respondedByCoach: { fullName: string };
+  coachRespondedAt: Date;
+};
+
+export const toPermitPdfData = (request: ApprovedRequestForPdf): TrainingAbsencePermitPdfData => ({
+  studentName: request.athlete.user.fullName,
+  studentCode: request.athlete.studentCode,
+  sport: request.competition.team.sport,
+  competitionName: request.competition.name,
+  trainingDate: request.trainingDate,
+  startTime: request.startTime.slice(0, 5),
+  endTime: request.endTime.slice(0, 5),
+  subjectName: request.subjectName,
+  teacherName: request.teacherName,
+  coachName: request.respondedByCoach.fullName,
+  approvedAt: request.coachRespondedAt,
+});
+
 type Field = { label: string; value: string };
 type FieldRow = [Field, Field?];
 

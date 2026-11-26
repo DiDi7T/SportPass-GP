@@ -50,6 +50,37 @@ Ambas historias consultan las solicitudes creadas en HU11 (`training_absence_req
 - Solo un deportista activo puede consultarlo; cualquier otro rol recibe 403.
 - La pantalla está en `/historial-solicitudes` y se accede desde "Historial" en el menú del deportista.
 
+## HU18. Notificar al docente por correo al aprobarse la solicitud (SCRUM-35)
+
+**Como** estudiante-deportista
+**quiero** que mi docente reciba automáticamente un correo cuando mi entrenador apruebe mi solicitud
+**para** que conozca mi ausencia por entrenamiento sin que yo tenga que escribirle ni él necesite una cuenta en SportPass.
+
+- **CA1. Disparador:** el correo se envía una sola vez, cuando HU17 pasa la solicitud a "Aprobada por entrenador". No se envía al crearla, rechazarla ni cancelarla.
+- **CA2. Destinatarios:** al correo `@icesi.edu.co` del docente registrado en la solicitud, con copia al correo institucional del deportista.
+- **CA3. Contenido:** nombre y código del estudiante, disciplina, competencia, fecha y hora del entrenamiento, materia y entrenador que avala; adjunta la constancia PDF de HU15 y aclara que es un aviso informativo y no un permiso oficial de Bienestar Universitario.
+- **CA4. Registro:** cada intento guarda `teacher_email_status` (`sent` o `failed`), `teacher_email_error` y `teacher_email_attempted_at`. Solo un envío exitoso llena `teacher_email_sent_at`, lo que además actualiza la notificación del deportista (trigger de HU19). Si el envío falla, la solicitud sigue aprobada.
+
+### Decisiones
+
+- El envío usa `nodemailer` (`src/mail`). `TeacherApprovalEmailService` (`src/teacher-notifications`) arma el correo y lo invoca `decideForCoach` (HU17) solo al aprobar.
+- La bandeja del entrenador y el historial general muestran `teacherEmailStatus` y `teacherEmailError`.
+- El SMTP tiene tiempos límite (10–20 s) para no dejar esperando al entrenador si el servidor de correo no responde.
+- La migración `010_hu18_teacher_email_log.sql` agrega las columnas del registro. **Debe aplicarse antes de usar esta versión del backend** (con `DB_SYNCHRONIZE=false`).
+
+### Configuración del correo (`backend/api/.env`)
+
+Copia `backend/api/.env.example` como `backend/api/.env` y llena los valores; el ejemplo lista todas las variables del backend (base de datos, servidor, autenticación y correo) sin secretos.
+
+| Variable | Uso |
+| --- | --- |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_SECURE` | Servidor SMTP. Con Gmail: `smtp.gmail.com`, `465`, tu correo, una **contraseña de aplicación** y `true`. |
+| `MAIL_FROM` | Remitente, p. ej. `SportPass Icesi <tu-correo@gmail.com>`. |
+| `MAIL_REDIRECT_TO` | **Solo en desarrollo y demostraciones:** desvía el correo a esta dirección; el asunto conserva a quién iba dirigido (`[Para: docente@icesi.edu.co; CC: deportista@icesi.edu.co] …`). Sin `MAIL_REDIRECT_CC_TO`, la copia se omite. En producción no se define. |
+| `MAIL_REDIRECT_CC_TO` | **Solo en desarrollo:** desvía la copia (la del deportista) a otra dirección, p. ej. el correo del docente a tu institucional y la copia a tu personal. Solo funciona junto con `MAIL_REDIRECT_TO`; sola no redirige nada. |
+
+Sin `MAIL_HOST`, fuera de producción el backend crea una cuenta de prueba de **Ethereal**: el correo no se entrega y en la consola aparece "Vista previa del correo: https://ethereal.email/message/…".
+
 ## Endpoints
 
 | Método | Ruta | Uso | Permiso |
@@ -70,4 +101,5 @@ Ambas historias consultan las solicitudes creadas en HU11 (`training_absence_req
 4. HU16: iniciar sesión con `coach.demo@icesi.edu.co` y abrir "Solicitudes". Verificar que solo aparezcan solicitudes de su disciplina, con los datos de CA2, y que las pendientes estén primero por fecha de entrenamiento. Con otro entrenador, la solicitud no debe aparecer.
 5. HU20: iniciar sesión con `admin.demo@icesi.edu.co`, abrir "Solicitudes" en el menú, aplicar filtros, usar "Exportar" y abrir un detalle para confirmar que no tiene acciones.
 6. HU14: con `athlete.demo@icesi.edu.co`, abrir "Historial". Verificar el orden, filtrar por estado, materia y fechas ("Este semestre"), confirmar el mensaje "No hay solicitudes con esos filtros." cuando nada coincide y abrir un detalle sin acciones.
-7. Pruebas unitarias: `yarn test src/absence-request-review` y `yarn test src/training-absence-requests` en `backend/api`.
+7. HU18: con la migración 010 aplicada y el correo configurado, aprobar como entrenador una solicitud pendiente. Verificar el correo (en el buzón de `MAIL_REDIRECT_TO` o en el enlace de Ethereal de la consola): destinatario y copia en el asunto, datos completos, aclaración de Bienestar y PDF adjunto. Luego, como deportista, la campana y el Historial deben indicar que el correo fue enviado. Para probar un fallo, poner una `MAIL_PASSWORD` incorrecta, aprobar otra solicitud y confirmar que sigue aprobada y que la bandeja del entrenador muestra el error.
+8. Pruebas unitarias: `yarn test src/absence-request-review`, `yarn test src/training-absence-requests` y `yarn test src/teacher-notifications` en `backend/api`.
