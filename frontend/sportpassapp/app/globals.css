@@ -1011,6 +1011,61 @@ button {
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+/* HU14: historial de solicitudes del deportista. */
+.history-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.history-filters label {
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.history-filters .input {
+  font-weight: 400;
+}
+.history-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.history-detail-row > td {
+  padding-top: 0;
+}
+.history-detail-row .training-request-detail {
+  margin-top: 0;
+}
+.history-detail-row button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.history-pdf-error {
+  display: block;
+  margin-top: 6px;
+  color: #9a2929;
+  font-size: 14px;
+}
+@media (max-width: 900px) {
+  .history-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .history-filters {
+    grid-template-columns: 1fr;
+  }
+  .history-filter-actions {
+    justify-content: stretch;
+  }
+  .history-filter-actions > * {
+    flex: 1;
+  }
+}
 @media (max-width: 640px) {
   .training-requests-launcher {
     align-items: stretch;

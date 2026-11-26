@@ -57,6 +57,20 @@ export const fetchEligibleCompetitions = () =>
 export const fetchMyTrainingAbsenceRequests = () =>
   apiFetch<MyTrainingAbsenceRequest[]>('/me/training-absence-requests');
 
+// HU14: filtros del historial. Las fechas aplican sobre el día del entrenamiento.
+export type AbsenceRequestHistoryFilters = {
+  status?: string;
+  from?: string;
+  to?: string;
+  subject?: string;
+};
+
+export const fetchMyAbsenceRequestHistory = (filters: AbsenceRequestHistoryFilters = {}) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) if (value?.trim()) params.set(key, value.trim());
+  return apiFetch<MyTrainingAbsenceRequest[]>(`/me/training-absence-requests/history${params.size ? `?${params}` : ''}`);
+};
+
 export const fetchMyTrainingAbsenceRequest = (id: string) =>
   apiFetch<MyTrainingAbsenceRequest>(`/me/training-absence-requests/${id}`);
 

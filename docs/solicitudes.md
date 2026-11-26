@@ -33,10 +33,28 @@ Ambas historias consultan las solicitudes creadas en HU11 (`training_absence_req
 - Se crea el permiso `absence-requests:history`, asignado al rol `admin`.
 - El archivo de Excel se genera en el backend con `exceljs`. Las fechas y horas se escriben en hora de Bogotá (UTC-5).
 
+## HU14. Consultar mi historial de solicitudes (SCRUM-26)
+
+**Como** estudiante-deportista
+**quiero** consultar y filtrar el historial completo de las notificaciones de ausencia que he realizado durante el semestre
+**para** llevar un control personal de las clases a las que he faltado por entrenamientos de competencia.
+
+- **CA1. Filtros de búsqueda:** rango de fechas del entrenamiento, estado (Pendiente, Aprobada por entrenador, Rechazada, Cancelada) y materia (coincidencia parcial, sin distinguir mayúsculas). El botón "Este semestre" llena el rango con el semestre actual (enero–junio o julio–diciembre).
+- **CA2. Orden cronológico:** del entrenamiento más reciente al más antiguo (fecha, hora de inicio y fecha de creación).
+- **CA3. Acceso a detalle:** cada solicitud muestra la competencia, el entrenamiento, la materia, el docente y su correo, la respuesta del entrenador, el motivo si fue rechazada y, si fue aprobada, a qué correo y cuándo se envió la notificación al docente, junto con el botón "Descargar comprobante" (PDF de HU15).
+
+### Decisiones
+
+- Es una consulta nueva (`/history`), aparte de la que usa HU12, para no cambiar el orden ni el comportamiento de "Mis solicitudes".
+- Solo lectura: ni la pantalla ni la API ofrecen acciones para editar, cancelar o eliminar desde el historial.
+- Solo un deportista activo puede consultarlo; cualquier otro rol recibe 403.
+- La pantalla está en `/historial-solicitudes` y se accede desde "Historial" en el menú del deportista.
+
 ## Endpoints
 
 | Método | Ruta | Uso | Permiso |
 | --- | --- | --- | --- |
+| GET | `/api/me/training-absence-requests/history?status=&from=&to=&subject=` | Historial del deportista (HU14) | Sesión de deportista activo |
 | GET | `/api/coach/absence-requests` | Bandeja del entrenador | `permissions:manage` |
 | GET | `/api/coach/absence-requests/:id` | Detalle de una solicitud asignada | `permissions:manage` |
 | GET | `/api/admin/absence-requests?teamId=&athleteId=&competitionId=&teacherEmail=&coachId=&status=&from=&to=` | Historial general | `absence-requests:history` |
@@ -51,4 +69,5 @@ Ambas historias consultan las solicitudes creadas en HU11 (`training_absence_req
 3. Crear una solicitud desde `/mis-competencias` con `athlete.demo@icesi.edu.co`.
 4. HU16: iniciar sesión con `coach.demo@icesi.edu.co` y abrir "Solicitudes". Verificar que solo aparezcan solicitudes de su disciplina, con los datos de CA2, y que las pendientes estén primero por fecha de entrenamiento. Con otro entrenador, la solicitud no debe aparecer.
 5. HU20: iniciar sesión con `admin.demo@icesi.edu.co`, abrir "Solicitudes" en el menú, aplicar filtros, usar "Exportar" y abrir un detalle para confirmar que no tiene acciones.
-6. Pruebas unitarias: `yarn test src/absence-request-review` en `backend/api`.
+6. HU14: con `athlete.demo@icesi.edu.co`, abrir "Historial". Verificar el orden, filtrar por estado, materia y fechas ("Este semestre"), confirmar el mensaje "No hay solicitudes con esos filtros." cuando nada coincide y abrir un detalle sin acciones.
+7. Pruebas unitarias: `yarn test src/absence-request-review` y `yarn test src/training-absence-requests` en `backend/api`.

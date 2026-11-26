@@ -82,6 +82,8 @@ export default function RoleNavbar({
         <>
           {/* HU5: competencias del deportista (requiere 70% de asistencia). */}
           <Link className="role-menu-placeholder role-menu-link" href="/mis-competencias">Mis competencias</Link>
+          {/* HU14: historial de solicitudes de ausencia del deportista. */}
+          <Link className="role-menu-placeholder role-menu-link" href="/historial-solicitudes">Historial</Link>
         </>
       )}
       {/* HU9: registro de asistencia a entrenamientos. */}
