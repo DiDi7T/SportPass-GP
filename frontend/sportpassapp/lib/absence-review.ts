@@ -69,6 +69,13 @@ export const fetchCoachRequests = () => apiFetch<ReviewedAbsenceRequest[]>("/coa
 export const fetchCoachRequest = (id: string) =>
   apiFetch<ReviewedAbsenceRequest>(`/coach/absence-requests/${id}`);
 
+// HU17: el servidor determina quién puede responder y valida el estado actual.
+export const decideCoachRequest = (id: string, decision: 'approve' | 'reject', reason?: string) =>
+  apiFetch<ReviewedAbsenceRequest>(`/coach/absence-requests/${id}/decision`, {
+    method: 'PATCH',
+    body: JSON.stringify({ decision, reason }),
+  });
+
 export const fetchAdminRequests = (filters: AdminFilters) =>
   apiFetch<ReviewedAbsenceRequest[]>(`/admin/absence-requests${toQuery(filters)}`);
 

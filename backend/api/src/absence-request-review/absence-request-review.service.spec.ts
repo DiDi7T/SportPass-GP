@@ -43,7 +43,7 @@ const request = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('AbsenceRequestReviewService', () => {
-  const requests: any = { createQueryBuilder: jest.fn() };
+  const requests: any = { createQueryBuilder: jest.fn(), update: jest.fn() };
   const requestCoaches: any = { find: jest.fn() };
   const callups: any = { createQueryBuilder: jest.fn() };
   let service: AbsenceRequestReviewService;
@@ -54,6 +54,7 @@ describe('AbsenceRequestReviewService', () => {
     service = new AbsenceRequestReviewService(requests, requestCoaches, callups);
     main = queryBuilder({ many: [request()], one: request() });
     requests.createQueryBuilder.mockReturnValue(main);
+    requests.update.mockResolvedValue({ affected: 1 });
     requestCoaches.find.mockResolvedValue([{ requestId: 'request-1', coachId: 'coach-1', coach: { fullName: 'Camilo Entrenador', email: 'coach.demo@icesi.edu.co' } }]);
     callups.createQueryBuilder.mockReturnValue(queryBuilder({ many: [{ athlete: { id: 'athlete-1' }, competition: { id: 'competition-1' } }] }));
   });
@@ -103,6 +104,36 @@ describe('AbsenceRequestReviewService', () => {
     it('no permite abrir una solicitud asignada a otro entrenador', async () => {
       requests.createQueryBuilder.mockReturnValue(queryBuilder({ one: null }));
       await expect(service.findOneForCoach('coach-2', 'request-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('HU17 · decidir como entrenador', () => {
+    it('CA1: aprueba y guarda la fecha de respuesta de la solicitud pendiente', async () => {
+      const result = await service.decideForCoach('coach-1', 'request-1', 'approve');
+      expect(result.status).toBe('pending_coach_approval'); // El stub de lectura no cambia de estado.
+      expect(requests.update).toHaveBeenCalledWith(
+        { id: 'request-1', status: 'pending_coach_approval' },
+        expect.objectContaining({ status: 'approved_by_coach', coachRespondedAt: expect.any(Date), rejectionComment: null }),
+      );
+    });
+
+    it('CA2: exige un motivo para rechazar', async () => {
+      await expect(service.decideForCoach('coach-1', 'request-1', 'reject', '   ')).rejects.toThrow('motivo');
+      expect(requests.update).not.toHaveBeenCalled();
+    });
+
+    it('CA2: guarda el motivo al rechazar', async () => {
+      await service.decideForCoach('coach-1', 'request-1', 'reject', ' No estaba convocado ');
+      expect(requests.update).toHaveBeenCalledWith(
+        { id: 'request-1', status: 'pending_coach_approval' },
+        expect.objectContaining({ status: 'rejected_by_coach', rejectionComment: 'No estaba convocado' }),
+      );
+    });
+
+    it('CA3: no modifica solicitudes previamente resueltas', async () => {
+      requests.createQueryBuilder.mockReturnValue(queryBuilder({ one: request({ status: 'cancelled' }) }));
+      await expect(service.decideForCoach('coach-1', 'request-1', 'approve')).rejects.toThrow('ya fue procesada');
+      expect(requests.update).not.toHaveBeenCalled();
     });
   });
 

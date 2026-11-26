@@ -6,13 +6,14 @@ import RoleNavbar from "@/components/role-navbar";
 import AbsenceRequestDetail, { StatusBadge } from "@/components/absence-request-detail";
 import { useRoleSession } from "@/lib/use-role-session";
 import {
+  decideCoachRequest,
   fetchCoachRequest,
   fetchCoachRequests,
   formatDay,
   type ReviewedAbsenceRequest,
 } from "@/lib/absence-review";
 
-const INBOX_PERMISSION = "permissions:manage";
+const INBOX_PERMISSION = "competitions:manage";
 const PENDING_STATUS = "pending_coach_approval";
 
 type Result = { requests: ReviewedAbsenceRequest[]; error: string };
@@ -49,6 +50,12 @@ export default function CoachRequestsInboxPage() {
       handleAuthError(error);
       setDetailError(error instanceof Error ? error.message : "No fue posible abrir la solicitud.");
     }
+  }
+
+  async function decide(id: string, decision: 'approve' | 'reject', reason?: string) {
+    await decideCoachRequest(id, decision, reason);
+    setResult({ requests: await fetchCoachRequests(), error: '' });
+    setDetail(null);
   }
 
   if (!session) {
@@ -145,7 +152,9 @@ export default function CoachRequestsInboxPage() {
         )}
       </div>
 
-      {detail && <AbsenceRequestDetail request={detail} onClose={() => setDetail(null)} />}
+      {detail && <AbsenceRequestDetail request={detail} onClose={() => setDetail(null)}
+        onApprove={id => decide(id, 'approve')}
+        onReject={(id, reason) => decide(id, 'reject', reason)} />}
     </main>
   );
 }
