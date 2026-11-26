@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Req, StreamableFile, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { AccessGuard } from '../auth/guards/access.guard';
 import { CreateTrainingAbsenceRequestDto } from './dto/create-training-absence-request.dto';
@@ -19,6 +19,17 @@ export class TrainingAbsenceRequestsController {
   @Get()
   findMine(@Req() request: AuthRequest) {
     return this.requests.findMine(request.user.sub);
+  }
+
+  @Get(':id/pdf')
+  @Header('Content-Type', 'application/pdf')
+  @Header('Content-Disposition', 'attachment; filename="constancia-sportpass.pdf"')
+  async downloadPermitPdf(
+    @Req() request: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const pdf = await this.requests.createPermitPdfMine(request.user.sub, id);
+    return new StreamableFile(pdf);
   }
 
   @Get(':id')

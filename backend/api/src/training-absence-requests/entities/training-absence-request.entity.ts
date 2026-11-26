@@ -10,6 +10,7 @@ import {
 import type { Relation } from 'typeorm';
 import { Athlete } from '../../athletes/entities/athlete.entity';
 import { Competition } from '../../competitions/entities/competition.entity';
+import { User } from '../../users/entities/user.entity';
 
 export const PENDING_COACH_APPROVAL = 'pending_coach_approval';
 
@@ -50,6 +51,10 @@ export class TrainingAbsenceRequest {
 
   @Column({ name: 'coach_responded_at', type: 'timestamptz', nullable: true })
   coachRespondedAt!: Date | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'responded_by_coach_id' })
+  respondedByCoach!: Relation<User> | null;
 
   @Column({ name: 'rejection_comment', type: 'varchar', length: 1000, nullable: true })
   rejectionComment!: string | null;

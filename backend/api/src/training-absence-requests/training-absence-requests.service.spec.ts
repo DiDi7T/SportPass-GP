@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { CreateTrainingAbsenceRequestDto } from './dto/create-training-absence-request.dto';
 import {
@@ -83,6 +83,67 @@ describe('TrainingAbsenceRequestsService', () => {
       id: 'request-1',
       createdAt: new Date('2026-11-24T12:00:00.000Z'),
     }));
+  });
+
+  describe('HU15 · constancia PDF', () => {
+    const approvedRequest = {
+      id: 'request-1',
+      status: 'approved_by_coach',
+      athlete: {
+        id: 'athlete-1',
+        studentCode: '202612345',
+        user: { fullName: 'Valentina Deportista Demo' },
+      },
+      competition: {
+        name: 'Copa Universitaria',
+        team: { sport: 'Voleibol' },
+      },
+      trainingDate: '2026-11-27',
+      startTime: '16:00:00',
+      endTime: '18:00:00',
+      subjectName: 'Cálculo diferencial',
+      teacherName: 'Docente Demo',
+      respondedByCoach: { fullName: 'Camilo Entrenador' },
+      coachRespondedAt: new Date('2026-11-25T18:30:00.000Z'),
+    };
+
+    it('CA1/CA2/CA3: genera PDF solo de una solicitud aprobada y propia con sus datos de aval', async () => {
+      requestsReadRepository.findOne.mockResolvedValue(approvedRequest);
+
+      const pdf = await service.createPermitPdfMine('athlete-user', 'request-1');
+
+      expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+      expect(pdf.length).toBeGreaterThan(1000);
+      expect(requestsReadRepository.findOne).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'request-1', athlete: { id: 'athlete-1' } },
+        relations: {
+          athlete: { user: true },
+          competition: { team: true },
+          respondedByCoach: true,
+        },
+      }));
+    });
+
+    it('CA1: rechaza solicitudes pendientes', async () => {
+      requestsReadRepository.findOne.mockResolvedValue({ ...approvedRequest, status: 'pending_coach_approval' });
+
+      await expect(service.createPermitPdfMine('athlete-user', 'request-1'))
+        .rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('CA1: no revela ni descarga solicitudes de otro deportista', async () => {
+      requestsReadRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.createPermitPdfMine('athlete-user', 'request-owned-by-someone-else'))
+        .rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('requiere entrenador y fecha registrados para generar la constancia completa', async () => {
+      requestsReadRepository.findOne.mockResolvedValue({ ...approvedRequest, respondedByCoach: null });
+
+      await expect(service.createPermitPdfMine('athlete-user', 'request-1'))
+        .rejects.toBeInstanceOf(ConflictException);
+    });
   });
 
   it('lists only future, active competitions with an athlete callup', async () => {

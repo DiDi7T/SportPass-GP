@@ -7,6 +7,7 @@ import RoleNavbar from "@/components/role-navbar";
 import { formatDateTime, formatDay, STATUS_STYLES } from "@/lib/absence-review";
 import { dashboardPath, type Role } from "@/lib/auth";
 import {
+  downloadMyTrainingAbsenceRequestPdf,
   fetchMyTrainingAbsenceRequest,
   type MyTrainingAbsenceRequest,
 } from "@/lib/training-absence-requests";
@@ -26,6 +27,8 @@ export default function NotificationRequestDetail({ requestId }: { requestId: st
   const { session, logout, handleAuthError } = useRoleSession();
   const [request, setRequest] = useState<MyTrainingAbsenceRequest | null>(null);
   const [error, setError] = useState("");
+  const [pdfError, setPdfError] = useState("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -43,6 +46,20 @@ export default function NotificationRequestDetail({ requestId }: { requestId: st
         setError(err instanceof Error ? err.message : "No fue posible abrir la solicitud.");
       });
   }, [requestId, session, handleAuthError, router]);
+
+  async function downloadPermitPdf() {
+    if (!request || request.status !== "approved_by_coach" || downloadingPdf) return;
+    setDownloadingPdf(true);
+    setPdfError("");
+    try {
+      await downloadMyTrainingAbsenceRequestPdf(request.id);
+    } catch (err) {
+      handleAuthError(err);
+      setPdfError(err instanceof Error ? err.message : "No se pudo descargar la constancia.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   if (!session) {
     return (
@@ -91,14 +108,23 @@ export default function NotificationRequestDetail({ requestId }: { requestId: st
             {request.status === "approved_by_coach" && (
               <aside className="notification-request-callout is-approved">
                 <span aria-hidden="true">✓</span>
-                <div>
+                <div className="notification-request-approved-copy">
                   <strong>Solicitud avalada</strong>
                   <p>
                     {request.teacherEmailSentAt
                       ? "El correo al docente fue enviado el " + formatDateTime(request.teacherEmailSentAt) + "."
                       : "El envío del correo al docente aún no tiene confirmación."}
                   </p>
+                  {pdfError && <p className="admin-error" role="alert">{pdfError}</p>}
                 </div>
+                <button
+                  type="button"
+                  className="btn-primary training-request-pdf-button notification-request-download-button"
+                  disabled={downloadingPdf}
+                  onClick={() => void downloadPermitPdf()}
+                >
+                  {downloadingPdf ? "Generando PDF…" : "Descargar constancia PDF"}
+                </button>
               </aside>
             )}
 

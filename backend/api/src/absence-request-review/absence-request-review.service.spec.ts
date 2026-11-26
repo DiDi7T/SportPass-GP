@@ -113,7 +113,7 @@ describe('AbsenceRequestReviewService', () => {
       expect(result.status).toBe('pending_coach_approval'); // El stub de lectura no cambia de estado.
       expect(requests.update).toHaveBeenCalledWith(
         { id: 'request-1', status: 'pending_coach_approval' },
-        expect.objectContaining({ status: 'approved_by_coach', coachRespondedAt: expect.any(Date), rejectionComment: null }),
+        expect.objectContaining({ status: 'approved_by_coach', coachRespondedAt: expect.any(Date), respondedByCoach: { id: 'coach-1' }, rejectionComment: null }),
       );
     });
 
@@ -126,7 +126,7 @@ describe('AbsenceRequestReviewService', () => {
       await service.decideForCoach('coach-1', 'request-1', 'reject', ' No estaba convocado ');
       expect(requests.update).toHaveBeenCalledWith(
         { id: 'request-1', status: 'pending_coach_approval' },
-        expect.objectContaining({ status: 'rejected_by_coach', rejectionComment: 'No estaba convocado' }),
+        expect.objectContaining({ status: 'rejected_by_coach', respondedByCoach: { id: 'coach-1' }, rejectionComment: 'No estaba convocado' }),
       );
     });
 
