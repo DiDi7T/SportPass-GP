@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { dashboardPath, Role, roleNames } from "@/lib/auth";
+import NotificationBell from "@/components/notification-bell";
 
 type RoleNavbarProps = {
   role: Role;
@@ -130,6 +131,7 @@ export default function RoleNavbar({
       <div className="user-menu">
         <span className="avatar">{fullName.charAt(0)}</span>
         <span>{fullName}</span>
+        {role === "athlete" && <NotificationBell />}
 
         <button className="text-button" onClick={onLogout}>
           <span className="logout-label-desktop">Cerrar sesión</span>

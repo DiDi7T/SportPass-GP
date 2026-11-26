@@ -60,6 +60,10 @@ export const fetchMyTrainingAbsenceRequests = () =>
 export const fetchMyTrainingAbsenceRequest = (id: string) =>
   apiFetch<MyTrainingAbsenceRequest>(`/me/training-absence-requests/${id}`);
 
+// HU13. Solo ejecuta la cancelación después de confirmar desde la interfaz.
+export const cancelTrainingAbsenceRequest = (id: string) =>
+  apiFetch<MyTrainingAbsenceRequest>(`/me/training-absence-requests/${id}/cancel`, { method: 'PATCH' });
+
 export const createTrainingAbsenceRequest = (data: CreateTrainingAbsenceRequest) =>
   apiFetch<TrainingAbsenceRequestCreated>('/me/training-absence-requests', {
     method: 'POST',

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatDateTime, formatDay, STATUS_STYLES, type ReviewedAbsenceRequest } from "@/lib/absence-review";
 
 export function StatusBadge({ status, label }: { status: string; label: string }) {
@@ -34,11 +34,33 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 export default function AbsenceRequestDetail({
   request,
   onClose,
+  onApprove,
+  onReject,
 }: {
   request: ReviewedAbsenceRequest;
   onClose: () => void;
+  onApprove?: (id: string) => Promise<void>;
+  onReject?: (id: string, reason: string) => Promise<void>;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [reason, setReason] = useState('');
+  const [working, setWorking] = useState(false);
+  const [actionError, setActionError] = useState('');
+
+  async function perform(action: 'approve' | 'reject') {
+    if (working) return;
+    if (action === 'approve' && !window.confirm('¿Confirmas la aprobación de esta solicitud?')) return;
+    if (action === 'reject' && !reason.trim()) {
+      setActionError('Debes escribir el motivo del rechazo.'); return;
+    }
+    setWorking(true); setActionError('');
+    try {
+      if (action === 'approve') await onApprove?.(request.id);
+      else await onReject?.(request.id, reason.trim());
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No fue posible procesar la solicitud.');
+    } finally { setWorking(false); }
+  }
 
   useEffect(() => {
     dialog.current?.showModal();
@@ -107,6 +129,25 @@ export default function AbsenceRequestDetail({
           {request.rejectionComment && <Field label="Motivo del rechazo">{request.rejectionComment}</Field>}
           <Field label="Correo al docente">{emailSent ? `Enviado el ${emailSent}` : "Sin confirmación de envío"}</Field>
         </Section>
+
+        {onApprove && onReject && request.status === 'pending_coach_approval' && (
+          <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="Decisión del entrenador">
+            <h3 className="font-bold text-slate-900">Responder solicitud (HU17)</h3>
+            <p className="text-sm text-slate-600">La decisión es definitiva. Verifica la convocatoria antes de aprobar.</p>
+            {actionError && <p role="alert" className="text-sm text-red-700">{actionError}</p>}
+            <div className="flex flex-wrap gap-3">
+              <button type="button" disabled={working} onClick={() => void perform('approve')}
+                className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Aprobar</button>
+            </div>
+            <label className="block text-sm font-semibold text-slate-700">
+              Motivo del rechazo (obligatorio)
+              <textarea rows={2} maxLength={1000} value={reason} onChange={e => setReason(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm" placeholder="Ejemplo: deportista no convocado" />
+            </label>
+            <button type="button" disabled={working || !reason.trim()} onClick={() => void perform('reject')}
+              className="rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Rechazar solicitud</button>
+          </section>
+        )}
 
         <div className="flex justify-end border-t border-slate-200 pt-4">
           <button type="button" onClick={() => dialog.current?.close()} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">

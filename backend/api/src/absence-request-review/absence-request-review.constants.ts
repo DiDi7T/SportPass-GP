@@ -1,7 +1,7 @@
 import { ABSENCE_REQUEST_STATUS_LABELS } from '../training-absence-requests/absence-request-status';
 
 // HU16: bandeja del entrenador. Reutiliza el permiso de gestión de permisos deportivos del rol coach.
-export const COACH_INBOX_PERMISSION = 'permissions:manage';
+export const COACH_INBOX_PERMISSION = 'competitions:manage';
 // HU20: historial general del administrador.
 export const HISTORY_PERMISSION = 'absence-requests:history';
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  cancelTrainingAbsenceRequest,
   fetchMyTrainingAbsenceRequest,
   fetchMyTrainingAbsenceRequests,
   type MyTrainingAbsenceRequest,
@@ -36,6 +37,7 @@ export default function TrainingAbsenceRequestsPanel() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -102,6 +104,22 @@ export default function TrainingAbsenceRequestsPanel() {
       setDetailError(err instanceof Error ? err.message : "No fue posible consultar el detalle.");
     } finally {
       setDetailLoading(false);
+    }
+  }
+
+  // HU13 CA2: confirmación modal previa; CA1/CA3: el backend vuelve a validar estado.
+  async function cancelRequest(id: string) {
+    if (!window.confirm('¿Confirmas que deseas cancelar esta solicitud pendiente?')) return;
+    setCancellingId(id);
+    setError('');
+    try {
+      await cancelTrainingAbsenceRequest(id);
+      await refresh();
+    } catch (err) {
+      handleAuthError(err);
+      setError(err instanceof Error ? err.message : 'No se pudo cancelar la solicitud.');
+    } finally {
+      setCancellingId(null);
     }
   }
 
@@ -189,6 +207,13 @@ export default function TrainingAbsenceRequestsPanel() {
                         >
                           {selectedId === request.id ? "Ocultar" : "Ver detalles"}
                         </button>
+                        {request.status === 'pending_coach_approval' && (
+                          <button type="button" disabled={cancellingId !== null}
+                            onClick={() => void cancelRequest(request.id)}
+                            className="ml-3 font-semibold text-red-700 hover:underline disabled:opacity-50">
+                            {cancellingId === request.id ? 'Cancelando…' : 'Cancelar solicitud'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

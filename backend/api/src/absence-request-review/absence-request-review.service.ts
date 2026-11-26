@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CompetitionCallup } from '../competitions/entities/competition-callup.entity';
@@ -119,6 +119,41 @@ export class AbsenceRequestReviewService {
     const request = await this.forCoach(this.baseQuery(), coachId).where('request.id = :id', { id }).getOne();
     if (!request) throw new NotFoundException('Solicitud no encontrada.');
     return (await this.withDetails([request]))[0];
+  }
+
+  // HU17: aprobación/rechazo irreversible mediante UPDATE condicionado por estado.
+  async decideForCoach(coachId: string, id: string, decision: 'approve' | 'reject', reason?: string) {
+    if (decision !== 'approve' && decision !== 'reject') {
+      throw new BadRequestException('La decisión debe ser aprobar o rechazar.');
+    }
+    const comment = reason?.trim() ?? '';
+    if (decision === 'reject' && !comment) {
+      throw new BadRequestException('Debes indicar un motivo para rechazar la solicitud.');
+    }
+    if (comment.length > 1000) {
+      throw new BadRequestException('El motivo no puede superar 1000 caracteres.');
+    }
+    const current = await this.findOneForCoach(coachId, id);
+    if (current.status !== PENDING_STATUS) {
+      throw new ConflictException('Esta solicitud ya fue procesada y no puede modificarse.');
+    }
+    if (decision === 'approve' && !current.officialCallup) {
+      throw new ConflictException('No se puede aprobar sin una convocatoria oficial registrada.');
+    }
+    const updated = await this.requests.update(
+      { id, status: PENDING_STATUS },
+      {
+        status: decision === 'approve' ? 'approved_by_coach' : 'rejected_by_coach',
+        coachRespondedAt: new Date(),
+        rejectionComment: decision === 'reject' ? comment : null,
+      },
+    );
+    if (updated.affected !== 1) {
+      throw new ConflictException('Otro usuario ya procesó esta solicitud.');
+    }
+    // La integración de correo HU18/HU19 se hace desde la transición a aprobada.
+    // Aquí NO marcamos teacher_email_sent_at ni simulamos el envío.
+    return this.findOneForCoach(coachId, id);
   }
 
   private applyAdminFilters(query: Query, filters: AdminAbsenceRequestFiltersDto) {
