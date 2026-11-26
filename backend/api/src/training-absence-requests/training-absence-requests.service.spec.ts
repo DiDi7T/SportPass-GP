@@ -47,7 +47,7 @@ describe('TrainingAbsenceRequestsService', () => {
   const teamCoaches: any = { find: jest.fn() };
   const users: any = { find: jest.fn() };
   const requestRepository: any = { create: jest.fn((value: any) => value), save: jest.fn() };
-  const requestsReadRepository: any = { find: jest.fn(), findOne: jest.fn() };
+  const requestsReadRepository: any = { find: jest.fn(), findOne: jest.fn(), update: jest.fn() };
   const requestCoachesRepository: any = { insert: jest.fn() };
   const manager: any = {
     getRepository: jest.fn((entity: unknown) =>
@@ -77,6 +77,7 @@ describe('TrainingAbsenceRequestsService', () => {
     ]);
     requestsReadRepository.find.mockResolvedValue([]);
     requestsReadRepository.findOne.mockResolvedValue(null);
+    requestsReadRepository.update.mockResolvedValue({ affected: 1 });
     requestRepository.save.mockImplementation(async (value: any) => ({
       ...value,
       id: 'request-1',
@@ -187,6 +188,30 @@ describe('TrainingAbsenceRequestsService', () => {
     expect(requestsReadRepository.findOne).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'another-athletes-request', athlete: { id: 'athlete-1' } },
     }));
+  });
+
+  it('HU13: cancela una solicitud propia pendiente y no envía correos', async () => {
+    requestsReadRepository.findOne.mockResolvedValue({
+      id: 'request-1', status: PENDING_COACH_APPROVAL,
+      competition: { id: 'competition-1', name: 'Copa', team: { name: 'Baloncesto' } },
+      trainingDate: '2099-05-08', startTime: '16:00:00', endTime: '18:00:00',
+      createdAt: new Date(), coachRespondedAt: null, rejectionComment: null, teacherEmailSentAt: null,
+    });
+    await service.cancel('athlete-user', 'request-1');
+    expect(requestsReadRepository.update).toHaveBeenCalledWith(
+      { id: 'request-1', status: PENDING_COACH_APPROVAL }, { status: 'cancelled' },
+    );
+  });
+
+  it('HU13: impide cancelar solicitudes ya procesadas', async () => {
+    requestsReadRepository.findOne.mockResolvedValue({
+      id: 'request-1', status: 'approved_by_coach',
+      competition: { id: 'competition-1', name: 'Copa', team: { name: 'Baloncesto' } },
+      trainingDate: '2099-05-08', startTime: '16:00:00', endTime: '18:00:00',
+      createdAt: new Date(), coachRespondedAt: null, rejectionComment: null, teacherEmailSentAt: null,
+    });
+    await expect(service.cancel('athlete-user', 'request-1')).rejects.toThrow('Solo se puede cancelar');
+    expect(requestsReadRepository.update).not.toHaveBeenCalled();
   });
 
   it('returns response and email traceability when they have been recorded', async () => {

@@ -103,6 +103,23 @@ export class TrainingAbsenceRequestsService {
     return this.toRequestResponse(request);
   }
 
+  // HU13: sólo el deportista dueño puede cancelar mientras la solicitud está pendiente.
+  async cancel(userId: string, requestId: string) {
+    const current = await this.findOneMine(userId, requestId);
+    if (current.status !== PENDING_COACH_APPROVAL) {
+      throw new ConflictException('Solo se puede cancelar una solicitud pendiente.');
+    }
+    const updated = await this.dataSource.getRepository(TrainingAbsenceRequest).update(
+      { id: requestId, status: PENDING_COACH_APPROVAL },
+      { status: 'cancelled' },
+    );
+    if (updated.affected !== 1) {
+      throw new ConflictException('La solicitud ya fue procesada y no puede cancelarse.');
+    }
+    // Conservamos trazabilidad; no se dispara ningún correo al cancelar.
+    return this.findOneMine(userId, requestId);
+  }
+
   private async findActiveCallups(athleteId: string, now: Date) {
     const callups = await this.callups.find({
       where: { athlete: { id: athleteId } },
