@@ -123,10 +123,24 @@ export default function AdminRequestsHistoryPage() {
             <p className="mt-1 text-sm text-slate-600">Solicitudes de ausencia de todos los equipos representativos. Solo consulta.</p>
           </div>
           {canView && (
-            <button type="button" className="primary-button" onClick={exportToExcel} disabled={exporting || loading || invalidRange || requests.length === 0}>
-              {exporting ? "Exportando…" : "Exportar"} <span aria-hidden="true">↓</span>
-            </button>
-          )}
+  <div className="flex flex-wrap gap-3">
+    <Link
+      href="/admin/estadisticas"
+      className="secondary-button"
+    >
+      Ver estadísticas
+    </Link>
+
+    <button
+      type="button"
+      className="primary-button"
+      onClick={exportToExcel}
+      disabled={exporting || loading || invalidRange || requests.length === 0}
+    >
+      {exporting ? "Exportando…" : "Exportar"} ↓
+    </button>
+  </div>
+)}
         </header>
 
         {!canView ? (

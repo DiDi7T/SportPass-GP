@@ -2869,6 +2869,29 @@ button {
   font-weight: 700;
   letter-spacing: 1.2px;
 }
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid #1d4ed8;
+  border-radius: 0.75rem;
+  background-color: white;
+  color: #1d4ed8;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+  background-color: #eff6ff;
+}
+
+.secondary-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
 .match-info {
   display: grid;
   gap: 4px;
