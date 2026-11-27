@@ -52,6 +52,22 @@ const toResponse = (request: TrainingAbsenceRequest, coaches: { fullName: string
   coaches,
 });
 
+// El nombre del docente lo escribe el deportista en cada solicitud, así que un mismo correo
+// puede llegar con nombres distintos. El filtro se agrupa por correo y muestra todos los nombres.
+const teacherOptions = (requests: TrainingAbsenceRequest[]) => {
+  const namesByEmail = new Map<string, Set<string>>();
+  for (const request of requests) {
+    const email = request.teacherEmail.toLowerCase();
+    const names = namesByEmail.get(email) ?? new Set<string>();
+    names.add(request.teacherName.trim());
+    namesByEmail.set(email, names);
+  }
+  return [...namesByEmail].map(([email, names]) => ({
+    id: email,
+    label: `${[...names].sort((x, y) => x.localeCompare(y, 'es')).join(' / ')} (${email})`,
+  }));
+};
+
 @Injectable()
 export class AbsenceRequestReviewService {
   constructor(
@@ -210,7 +226,7 @@ export class AbsenceRequestReviewService {
       teams: unique(requests.map(r => ({ id: r.competition.team.id, label: r.competition.team.name }))).sort(byLabel),
       athletes: unique(requests.map(r => ({ id: r.athlete.id, label: r.athlete.user.fullName }))).sort(byLabel),
       competitions: unique(requests.map(r => ({ id: r.competition.id, label: r.competition.name }))).sort(byLabel),
-      teachers: unique(requests.map(r => ({ id: r.teacherEmail.toLowerCase(), label: `${r.teacherName} (${r.teacherEmail.toLowerCase()})` }))).sort(byLabel),
+      teachers: teacherOptions(requests).sort(byLabel),
       coaches: unique(assignments.map(a => ({ id: a.coachId, label: a.coach.fullName }))).sort(byLabel),
     };
   }
