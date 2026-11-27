@@ -82,12 +82,25 @@ export default function CoachRequestsInboxPage() {
           <span className="font-medium text-slate-800">Solicitudes</span>
         </nav>
 
-        <header className="mb-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Solicitudes de ausencia</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Avisos de los deportistas de tu disciplina. Verifica que estén convocados y que tengan entrenamiento en ese horario.
-          </p>
-        </header>
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+      Solicitudes de ausencia
+    </h1>
+    <p className="mt-1 text-sm text-slate-600">
+      Avisos de los deportistas de tu disciplina. Verifica que estén convocados y que tengan entrenamiento en ese horario.
+    </p>
+  </div>
+
+  {canView && (
+    <Link
+      href="/coach/estadisticas"
+      className="secondary-button shrink-0"
+    >
+      Ver estadísticas
+    </Link>
+  )}
+</header>
 
         {!canView ? (
           <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">Solo los entrenadores pueden consultar esta bandeja.</p>
