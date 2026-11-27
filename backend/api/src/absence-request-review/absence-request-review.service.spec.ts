@@ -195,5 +195,15 @@ describe('AbsenceRequestReviewService', () => {
       expect(options.teachers).toEqual([{ id: 'docente.demo2@icesi.edu.co', label: 'Docente Demo Dos (docente.demo2@icesi.edu.co)' }]);
       expect(options.coaches).toEqual([{ id: 'coach-1', label: 'Camilo Entrenador' }]);
     });
+
+    it('agrupa en una sola opción los nombres distintos registrados con el mismo correo de docente', async () => {
+      requests.createQueryBuilder.mockReturnValue(queryBuilder({ many: [
+        request(),
+        request({ id: 'request-2', teacherName: 'Miguel Triana', teacherEmail: 'Docente.Demo2@icesi.edu.co' }),
+        request({ id: 'request-3', teacherName: 'Docente Demo Dos ' }),
+      ] }));
+      const options = await service.findAdminFilterOptions();
+      expect(options.teachers).toEqual([{ id: 'docente.demo2@icesi.edu.co', label: 'Docente Demo Dos / Miguel Triana (docente.demo2@icesi.edu.co)' }]);
+    });
   });
 });
