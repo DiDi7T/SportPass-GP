@@ -132,7 +132,7 @@ export default function AbsenceRequestDetail({
 
         {onApprove && onReject && request.status === 'pending_coach_approval' && (
           <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="Decisión del entrenador">
-            <h3 className="font-bold text-slate-900">Responder solicitud (HU17)</h3>
+            <h3 className="font-bold text-slate-900">Responder solicitud</h3>
             <p className="text-sm text-slate-600">La decisión es definitiva. Verifica la convocatoria antes de aprobar.</p>
             {actionError && <p role="alert" className="text-sm text-red-700">{actionError}</p>}
             <div className="flex flex-wrap gap-3">
